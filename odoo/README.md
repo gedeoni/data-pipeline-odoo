@@ -18,9 +18,9 @@ This dataset is designed for downstream ETL (e.g., Airflow) to compute stockout 
 ### Required Odoo modules
 
 - Required: Inventory (`stock`)
-- Optional: Purchase (`purchase`), Sales (`sale`)
+- Optional (Required for `--orders`): Purchase (`purchase`), Sales (`sale`), Sales Stock (`sale_stock`), Purchase Stock (`purchase_stock`)
 
-The script uses **stock pickings** directly (no direct Postgres writes). Purchase/Sales are not required.
+By default, the script uses **stock pickings** directly. If using `--orders`, full Purchase/Sales workflows are used.
 
 ### Python
 
@@ -85,6 +85,13 @@ Generates movements via correct Odoo stock workflows (confirm/assign/validate):
 - Damage/shrinkage: GOOD → DAMAGED (using internal picking type)
 - Outbound consumption/sales: GOOD → Customer/outgoing (using outgoing picking type)
 
+### 5) Orders (Optional via `--orders`)
+
+Instead of direct stock movements, generates full business documents:
+- **Purchase Orders**: Created, confirmed, and received after a random lead time.
+- **Sales Orders**: Created, confirmed, and delivered.
+This mode is useful for analyzing **Vendor Lead Time** and **Order-to-Delivery** metrics.
+
 Pickings are created with realistic `scheduled_date` and are validated so quants update.
 
 ## How to run
@@ -99,6 +106,36 @@ Ensure Odoo 17 is running locally and you can log in to the database.
 pip install -r requirements.txt
 ```
 
+### Seeding modes (defaults and overrides)
+
+Default behavior:
+
+- If you do not pass any mode flags, the script seeds **movements only** for `--days`.
+- If you pass `--orders`:
+  - `--days < 100`: **orders only**
+  - `--days >= 100`: **partitioned**, with orders on the most recent half and movements on the older half (no overlap).
+- Overrides:
+  - `--orders-only`: always orders only (no partitioning)
+  - `--movements-only`: always movements only (no partitioning)
+
+Examples:
+
+```bash
+python3 main.py --scale medium --days 180 --countries rw,ug,ke
+```
+
+```bash
+python3 main.py --orders --scale medium --days 180 --countries rw,ug,ke
+```
+
+```bash
+python3 main.py --orders-only --scale medium --days 180 --countries rw,ug,ke
+```
+
+```bash
+python3 main.py --movements-only --scale medium --days 180 --countries rw,ug,ke
+```
+
 ### 3) Seed data into Odoo
 
 Example (medium scale, 180 days, all 3 countries):
@@ -107,7 +144,7 @@ Example (medium scale, 180 days, all 3 countries):
 python3 main.py --scale medium --days 180 --countries rw,ug,ke
 ```
 
-Useful options:
+### Other useful options
 
 - Full(er) location density per warehouse:
 
@@ -129,7 +166,7 @@ python3 main.py --out-dir ./seed_output --scale medium --days 180
 
 
 ```bash
-python3 main.py --scale large --user gedeoniyonkuru@gmail.com --password gedeon --days 180 --full-geo --countries rw,ug,ke
+python3 main.py --scale large --user odoo@gmail.com --password odoo --days 180 --full-geo --countries rw,ug,ke
 ```
 
 Connection overrides (if needed):

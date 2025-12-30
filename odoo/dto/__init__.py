@@ -12,6 +12,7 @@ class AnomalyEvent:
     company: str
     detail: str
     date: dt.date
+    end_date: dt.date | None = None
 
 
 @dataclass(frozen=True)

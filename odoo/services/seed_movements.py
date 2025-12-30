@@ -665,9 +665,10 @@ class MovementSeeder:
         vendor_ids_by_category: dict[str, list[int]],
         days: int,
         scale: str,
+        end_date: dt.date | None = None,
     ) -> dict[str, Any]:
         supplier_loc_id, customer_loc_id = self._ensure_base_locations()
-        end_date = dt.date.today()
+        end_date = end_date or dt.date.today()
         days_list = _date_range(end_date, days)
         rng = random.Random(_stable_int_seed(f"{self.dataset_key}:{company.name}:moves"))
 
