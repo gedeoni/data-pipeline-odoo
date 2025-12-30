@@ -1,0 +1,568 @@
+[
+  {
+    "name": "Gasabo",
+    "base_units": [
+      "Bumbogo",
+      "Gatsata",
+      "Gikomero",
+      "Gisozi",
+      "Jabana",
+      "Jali",
+      "Kacyiru",
+      "Kimihurura",
+      "Kimironko",
+      "Kinyinya",
+      "Ndera",
+      "Nduba",
+      "Remera",
+      "Rusororo",
+      "Rutunga"
+    ]
+  },
+  {
+    "name": "Kicukiro",
+    "base_units": [
+      "Gahanga",
+      "Gatenga",
+      "Gikondo",
+      "Kagarama",
+      "Kanombe",
+      "Kicukiro",
+      "Kigarama",
+      "Masaka",
+      "Niboye",
+      "Nyarugunga"
+    ]
+  },
+  {
+    "name": "Nyarugenge",
+    "base_units": [
+      "Gitega",
+      "Kanyinya",
+      "Kigali",
+      "Kimisagara",
+      "Mageragere",
+      "Muhima",
+      "Nyakabanda",
+      "Nyamirambo",
+      "Nyarugenge",
+      "Rwezamenyo"
+    ]
+  },
+  {
+    "name": "Bugesera",
+    "base_units": [
+      "Gashora",
+      "Juru",
+      "Kamabuye",
+      "Mareba",
+      "Mayange",
+      "Musenyi",
+      "Mwogo",
+      "Ngeruka",
+      "Ntarama",
+      "Nyamata",
+      "Nyarugenge",
+      "Rilima",
+      "Ruhuha",
+      "Rweru",
+      "Shyara"
+    ]
+  },
+  {
+    "name": "Gatsibo",
+    "base_units": [
+      "Gasange",
+      "Gatsibo",
+      "Gitoki",
+      "Kabarore",
+      "Kageyo",
+      "Kiramuruzi",
+      "Kiziguro",
+      "Muhura",
+      "Murambi",
+      "Ngarama",
+      "Nyagihanga",
+      "Remera",
+      "Rugarama",
+      "Rwimbogo"
+    ]
+  },
+  {
+    "name": "Kayonza",
+    "base_units": [
+      "Gahini",
+      "Kabare",
+      "Kabarondo",
+      "Mukarange",
+      "Murama",
+      "Murundi",
+      "Mwiri",
+      "Ndego",
+      "Nyamirama",
+      "Rukara",
+      "Ruramira",
+      "Rwinkwavu"
+    ]
+  },
+  {
+    "name": "Kirehe",
+    "base_units": [
+      "Gahara",
+      "Gatore",
+      "Kigarama",
+      "Kigina",
+      "Kirehe",
+      "Mahama",
+      "Mpanga",
+      "Musaza",
+      "Mushikiri",
+      "Nasho",
+      "Nyamugari",
+      "Nyarubuye"
+    ]
+  },
+  {
+    "name": "Ngoma",
+    "base_units": [
+      "Gashanda",
+      "Jarama",
+      "Karembo",
+      "Kazo",
+      "Kibungo",
+      "Mugesera",
+      "Murama",
+      "Mutenderi",
+      "Remera",
+      "Rukira",
+      "Rukumberi",
+      "Rurenge",
+      "Sake",
+      "Zaza"
+    ]
+  },
+  {
+    "name": "Nyagatare",
+    "base_units": [
+      "Gatunda",
+      "Karama",
+      "Karangazi",
+      "Katabagemu",
+      "Kiyombe",
+      "Matimba",
+      "Mimuli",
+      "Mukama",
+      "Musheli",
+      "Nyagatare",
+      "Rukomo",
+      "Rwempasha",
+      "Rwimiyaga",
+      "Tabagwe"
+    ]
+  },
+  {
+    "name": "Rwamagana",
+    "base_units": [
+      "Fumbwe",
+      "Gahengeri",
+      "Gishari",
+      "Karenge",
+      "Kigabiro",
+      "Muhazi",
+      "Munyaga",
+      "Munyiginya",
+      "Musha",
+      "Muyumbu",
+      "Mwulire",
+      "Nyakariiro",
+      "Nzige",
+      "Rubona"
+    ]
+  },
+  {
+    "name": "Burera",
+    "base_units": [
+      "Bungwe",
+      "Butaro",
+      "Cyanika",
+      "Cyeru",
+      "Gahunga",
+      "Gatebe",
+      "Gitovu",
+      "Kagogo",
+      "Kinoni",
+      "Kinyababa",
+      "Kivuye",
+      "Nemba",
+      "Rugarama",
+      "Rugendabari",
+      "Ruhunde",
+      "Rusarabuye",
+      "Rwerere"
+    ]
+  },
+  {
+    "name": "Gakenke",
+    "base_units": [
+      "Busengo",
+      "Coko",
+      "Cyabingo",
+      "Gakenke",
+      "Gashenyi",
+      "Janja",
+      "Kamubuga",
+      "Karambo",
+      "Kivuruga",
+      "Mataba",
+      "Minazi",
+      "Mugunga",
+      "Muhondo",
+      "Muyongwe",
+      "Muzo",
+      "Nemba",
+      "Ruli",
+      "Rusasa",
+      "Rushashi"
+    ]
+  },
+  {
+    "name": "Gicumbi",
+    "base_units": [
+      "Bukure",
+      "Bwisige",
+      "Byumba",
+      "Cyumba",
+      "Giti",
+      "Kageyo",
+      "Kaniga",
+      "Manyagiro",
+      "Miyove",
+      "Mukarange",
+      "Muko",
+      "Mutete",
+      "Nyamiyaga",
+      "Nyankenke",
+      "Rubaya",
+      "Rukomo",
+      "Rushaki",
+      "Rutare",
+      "Ruvune",
+      "Rwamiko",
+      "Shangasha"
+    ]
+  },
+  {
+    "name": "Musanze",
+    "base_units": [
+      "Busogo",
+      "Cyuve",
+      "Gacaca",
+      "Gashaki",
+      "Gataraga",
+      "Kimonyi",
+      "Kinigi",
+      "Muhoza",
+      "Muko",
+      "Musanze",
+      "Nkotsi",
+      "Nyange",
+      "Remera",
+      "Rwaza",
+      "Shingiro"
+    ]
+  },
+  {
+    "name": "Rulindo",
+    "base_units": [
+      "Base",
+      "Burega",
+      "Bushoki",
+      "Buyoga",
+      "Cyinzuzi",
+      "Cyungo",
+      "Kinihira",
+      "Kisaro",
+      "Masoro",
+      "Mbogo",
+      "Murambi",
+      "Ngoma",
+      "Ntarabana",
+      "Rukozo",
+      "Rusiga",
+      "Shyorongi",
+      "Tumba"
+    ]
+  },
+  {
+    "name": "Gisagara",
+    "base_units": [
+      "Gikonko",
+      "Gishubi",
+      "Kansi",
+      "Kibilizi",
+      "Kigembe",
+      "Mamba",
+      "Muganza",
+      "Mugombwa",
+      "Mukindo",
+      "Musha",
+      "Ndora",
+      "Nyanza",
+      "Save"
+    ]
+  },
+  {
+    "name": "Huye",
+    "base_units": [
+      "Gishamvu",
+      "Huye",
+      "Karama",
+      "Kigoma",
+      "Kinazi",
+      "Maraba",
+      "Mbazi",
+      "Mukura",
+      "Ngoma",
+      "Ruhashya",
+      "Rusatira",
+      "Rwaniro",
+      "Tumba"
+    ]
+  },
+  {
+    "name": "Kamonyi",
+    "base_units": [
+      "Gacurabwenge",
+      "Karama",
+      "Kayenzi",
+      "Kayumbu",
+      "Mugina",
+      "Musambira",
+      "Ngamba",
+      "Nyamiyaga",
+      "Nyarubaka",
+      "Rugalika",
+      "Rukoma",
+      "Runda"
+    ]
+  },
+  {
+    "name": "Muhanga",
+    "base_units": [
+      "Cyeza",
+      "Kabacuzi",
+      "Kibangu",
+      "Kiyumba",
+      "Muhanga",
+      "Mushishiro",
+      "Nyabinoni",
+      "Nyamabuye",
+      "Nyarusange",
+      "Rongi",
+      "Rugendabari",
+      "Shyogwe"
+    ]
+  },
+  {
+    "name": "Nyamagabe",
+    "base_units": [
+      "Buruhukiro",
+      "Cyanika",
+      "Gasaka",
+      "Gatare",
+      "Kaduha",
+      "Kamegeli",
+      "Kibilizi",
+      "Kibumbwe",
+      "Kitabi",
+      "Mbazi",
+      "Mugano",
+      "Musange",
+      "Musebeya",
+      "Mushubi",
+      "Nkomane",
+      "Tare",
+      "Uwinkingi"
+    ]
+  },
+  {
+    "name": "Nyanza",
+    "base_units": [
+      "Busasamana",
+      "Busoro",
+      "Cyabakamyi",
+      "Kibirizi",
+      "Kigoma",
+      "Mukingo",
+      "Muyira",
+      "Ntyazo",
+      "Nyagisozi",
+      "Rwabicuma"
+    ]
+  },
+  {
+    "name": "Nyaruguru",
+    "base_units": [
+      "Busanze",
+      "Cyahinda",
+      "Kibeho",
+      "Kivu",
+      "Mata",
+      "Munini",
+      "Ngera",
+      "Ngoma",
+      "Nyabimata",
+      "Nyagisozi",
+      "Muganza",
+      "Ruheru",
+      "Ruramba",
+      "Rusenge"
+    ]
+  },
+  {
+    "name": "Ruhango",
+    "base_units": [
+      "Bweramana",
+      "Byimana",
+      "Kabagari",
+      "Kinazi",
+      "Mbuye",
+      "Mwendo",
+      "Ntongwe",
+      "Ruhango",
+      "Kinihira"
+    ]
+  },
+  {
+    "name": "Karongi",
+    "base_units": [
+      "Bwishyura",
+      "Gishari",
+      "Gishyita",
+      "Gisovu",
+      "Gitesi",
+      "Mubuga",
+      "Murambi",
+      "Murundi",
+      "Mutuntu",
+      "Rubengera",
+      "Rugabano",
+      "Ruganda",
+      "Rwankuba",
+      "Twumba"
+    ]
+  },
+  {
+    "name": "Ngororero",
+    "base_units": [
+      "Bwira",
+      "Gatumba",
+      "Hindiro",
+      "Kabaya",
+      "Kageyo",
+      "Kavumu",
+      "Matyazo",
+      "Muhanda",
+      "Muhororo",
+      "Ndaro",
+      "Ngororero",
+      "Nyange",
+      "Sovu"
+    ]
+  },
+  {
+    "name": "Nyabihu",
+    "base_units": [
+      "Bigogwe",
+      "Jenda",
+      "Jomba",
+      "Kabatwa",
+      "Karago",
+      "Kintobo",
+      "Mukamira",
+      "Muringa",
+      "Rambura",
+      "Rugera",
+      "Rurembo",
+      "Shyira"
+    ]
+  },
+  {
+    "name": "Nyamasheke",
+    "base_units": [
+      "Bushekeri",
+      "Bushenge",
+      "Cyato",
+      "Gihombo",
+      "Kagano",
+      "Kanjongo",
+      "Karambi",
+      "Karengera",
+      "Kirimbi",
+      "Macuba",
+      "Mahembe",
+      "Nyabitekeri",
+      "Rangiro",
+      "Ruharambuga",
+      "Shangi"
+    ]
+  },
+  {
+    "name": "Rubavu",
+    "base_units": [
+      "Bugeshi",
+      "Busasamana",
+      "Cyanzarwe",
+      "Gisenyi",
+      "Kanama",
+      "Kanzenze",
+      "Mudende",
+      "Nyakiliba",
+      "Nyamyumba",
+      "Nyundo",
+      "Rubavu",
+      "Rugerero"
+    ]
+  },
+  {
+    "name": "Rusizi",
+    "base_units": [
+      "Bugarama",
+      "Butare",
+      "Bweyeye",
+      "Gashonga",
+      "Giheke",
+      "Gihundwe",
+      "Gikundamvura",
+      "Gitambi",
+      "Kamembe",
+      "Muganza",
+      "Mururu",
+      "Nkanka",
+      "Nkombo",
+      "Nkungu",
+      "Nyakabuye",
+      "Nyakarenzo",
+      "Nzahaha",
+      "Rwimbogo"
+    ]
+  },
+  {
+    "name": "Rutsiro",
+    "base_units": [
+      "Boneza",
+      "Gihango",
+      "Kigeyo",
+      "Kivumu",
+      "Manihira",
+      "Mukura",
+      "Murunda",
+      "Musasa",
+      "Mushonyi",
+      "Mushubati",
+      "Nyabirasi",
+      "Ruhango",
+      "Rusebeya"
+    ]
+  }
+]

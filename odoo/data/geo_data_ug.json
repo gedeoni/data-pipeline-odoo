@@ -1,0 +1,927 @@
+[
+  {
+    "name": "Abim",
+    "base_units": [
+      "Labwor"
+    ]
+  },
+  {
+    "name": "Adjumani",
+    "base_units": [
+      "East Moyo",
+      "Adjumani East",
+      "Adjumani West"
+    ]
+  },
+  {
+    "name": "Agago",
+    "base_units": [
+      "Agago West",
+      "Agago North",
+      "Agago"
+    ]
+  },
+  {
+    "name": "Alebtong",
+    "base_units": [
+      "Ajuri",
+      "Moroto"
+    ]
+  },
+  {
+    "name": "Amolatar",
+    "base_units": [
+      "Kioga",
+      "Kioga North"
+    ]
+  },
+  {
+    "name": "Amudat",
+    "base_units": [
+      "Upe"
+    ]
+  },
+  {
+    "name": "Amuria",
+    "base_units": [
+      "Amuria",
+      "Kapelebyong"
+    ]
+  },
+  {
+    "name": "Amuru",
+    "base_units": [
+      "Kilak North",
+      "Kilak South"
+    ]
+  },
+  {
+    "name": "Apac",
+    "base_units": [
+      "Kwania",
+      "Maruzi",
+      "Maruzi North",
+      "Apac Municipality"
+    ]
+  },
+  {
+    "name": "Arua",
+    "base_units": [
+      "Ayivu",
+      "Vurra",
+      "Arua Central",
+      "Ayiivu East",
+      "Ayiivu West"
+    ]
+  },
+  {
+    "name": "Budaka",
+    "base_units": [
+      "Budaka",
+      "Iki-Iki"
+    ]
+  },
+  {
+    "name": "Bududa",
+    "base_units": [
+      "Manjiya",
+      "Bukyigai",
+      "Lutsheshe"
+    ]
+  },
+  {
+    "name": "Bugiri",
+    "base_units": [
+      "Bukooli North",
+      "Bukhooli Central",
+      "Bugiri Municipality"
+    ]
+  },
+  {
+    "name": "Buhweju",
+    "base_units": [
+      "Buhweju West",
+      "Buhweju"
+    ]
+  },
+  {
+    "name": "Buikwe",
+    "base_units": [
+      "Buikwe South",
+      "Lugazi Municipality",
+      "Njeru Municipality"
+    ]
+  },
+  {
+    "name": "Bukedea",
+    "base_units": [
+      "Bukedea",
+      "Kachumbala"
+    ]
+  },
+  {
+    "name": "Bukomansimbi",
+    "base_units": [
+      "Bukomansimbi North",
+      "Bukomansimbi South"
+    ]
+  },
+  {
+    "name": "Bukwo",
+    "base_units": [
+      "Kongasis"
+    ]
+  },
+  {
+    "name": "Bulambuli",
+    "base_units": [
+      "Bulambuli",
+      "Elgon",
+      "Elgon North"
+    ]
+  },
+  {
+    "name": "Buliisa",
+    "base_units": [
+      "Buliisa"
+    ]
+  },
+  {
+    "name": "Bundibugyo",
+    "base_units": [
+      "Bughendera",
+      "Bwamba"
+    ]
+  },
+  {
+    "name": "Bunyangabu",
+    "base_units": [
+      "Bunyangabu"
+    ]
+  },
+  {
+    "name": "Bushenyi",
+    "base_units": [
+      "Igara East",
+      "Igara West",
+      "Bushenyi-Ishaka Municipality"
+    ]
+  },
+  {
+    "name": "Busia",
+    "base_units": [
+      "Samia-Bugwe North",
+      "Samia-Bugwe South",
+      "Busia Municipality"
+    ]
+  },
+  {
+    "name": "Butaleja",
+    "base_units": [
+      "Bunyole East",
+      "Bunyole West"
+    ]
+  },
+  {
+    "name": "Butambala",
+    "base_units": [
+      "Butambala"
+    ]
+  },
+  {
+    "name": "Buvuma",
+    "base_units": [
+      "Buvuma Islands"
+    ]
+  },
+  {
+    "name": "Buyende",
+    "base_units": [
+      "Budiope East",
+      "Budiope West"
+    ]
+  },
+  {
+    "name": "Dokolo",
+    "base_units": [
+      "Dokolo North",
+      "Dokolo South"
+    ]
+  },
+  {
+    "name": "Gomba",
+    "base_units": [
+      "Gomba East",
+      "Gomba West"
+    ]
+  },
+  {
+    "name": "Gulu",
+    "base_units": [
+      "Aswa",
+      "Gulu East",
+      "Gulu West"
+    ]
+  },
+  {
+    "name": "Hoima",
+    "base_units": [
+      "Bugahya",
+      "Kigorobya",
+      "Hoima East Division",
+      "Hoima West Division"
+    ]
+  },
+  {
+    "name": "Ibanda",
+    "base_units": [
+      "Ibanda North",
+      "Ibanda South",
+      "Ibanda Municipality"
+    ]
+  },
+  {
+    "name": "Iganga",
+    "base_units": [
+      "Kigulu North",
+      "Kigulu South",
+      "Iganga Municipality"
+    ]
+  },
+  {
+    "name": "Isingiro",
+    "base_units": [
+      "Bukanga North",
+      "Bukanga",
+      "Isingiro North",
+      "Isingiro South"
+    ]
+  },
+  {
+    "name": "Jinja",
+    "base_units": [
+      "Butembe",
+      "Kagoma North",
+      "Kagoma",
+      "Jinja North",
+      "Jinja South East",
+      "Jinja South West"
+    ]
+  },
+  {
+    "name": "Kaabong",
+    "base_units": [
+      "Dodoth East",
+      "Dodoth North",
+      "Ik"
+    ]
+  },
+  {
+    "name": "Kabale",
+    "base_units": [
+      "Ndorwa East",
+      "Ndorwa West",
+      "Kabale Municipality"
+    ]
+  },
+  {
+    "name": "Kabarole",
+    "base_units": [
+      "Burahya",
+      "Fort Portal Central",
+      "Fort Portal North"
+    ]
+  },
+  {
+    "name": "Kaberamaido",
+    "base_units": [
+      "Kaberamaido",
+      "Kalaki"
+    ]
+  },
+  {
+    "name": "Kagadi",
+    "base_units": [
+      "Buyaga East",
+      "Buyaga West"
+    ]
+  },
+  {
+    "name": "Kakumiro",
+    "base_units": [
+      "Bugangaizi East",
+      "Bugangaizi West",
+      "Bugangaizi South"
+    ]
+  },
+  {
+    "name": "Kalangala",
+    "base_units": [
+      "Bujumba",
+      "Kyamuswa"
+    ]
+  },
+  {
+    "name": "Kaliro",
+    "base_units": [
+      "Bulamogi",
+      "Bulamogi North West"
+    ]
+  },
+  {
+    "name": "Kalungu",
+    "base_units": [
+      "Kalungu East",
+      "Kalungu West"
+    ]
+  },
+  {
+    "name": "Kampala",
+    "base_units": [
+      "Central Division",
+      "Kawempe North",
+      "Kawempe South",
+      "Makindye East",
+      "Makindye West",
+      "Lubaga North",
+      "Lubaga South",
+      "Nakawa East",
+      "Nakawa West"
+    ]
+  },
+  {
+    "name": "Kamuli",
+    "base_units": [
+      "Bugabula North",
+      "Bugabula South",
+      "Buzaaya",
+      "Kamuli Municipality"
+    ]
+  },
+  {
+    "name": "Kamwenge",
+    "base_units": [
+      "Kibale",
+      "Kibale East",
+      "Kitagwenda"
+    ]
+  },
+  {
+    "name": "Kanungu",
+    "base_units": [
+      "Kinkizi East",
+      "Kinkizi West"
+    ]
+  },
+  {
+    "name": "Kapchorwa",
+    "base_units": [
+      "Tingey",
+      "Kapchorwa Municipality"
+    ]
+  },
+  {
+    "name": "Kasese",
+    "base_units": [
+      "Bukonzo East",
+      "Bukonzo West",
+      "Busongora North",
+      "Busongora South",
+      "Kasese Municipality"
+    ]
+  },
+  {
+    "name": "Kassanda",
+    "base_units": [
+      "Kassanda North",
+      "Kassanda South",
+      "Bukuya"
+    ]
+  },
+  {
+    "name": "Katakwi",
+    "base_units": [
+      "Usuk",
+      "Toroma",
+      "Ngariam"
+    ]
+  },
+  {
+    "name": "Kayunga",
+    "base_units": [
+      "Bbaale",
+      "Ntenjeru North",
+      "Ntenjeru South"
+    ]
+  },
+  {
+    "name": "Kibaale",
+    "base_units": [
+      "Buyanja East",
+      "Buyanja"
+    ]
+  },
+  {
+    "name": "Kiboga",
+    "base_units": [
+      "Kiboga East",
+      "Kiboga West"
+    ]
+  },
+  {
+    "name": "Kibuku",
+    "base_units": [
+      "Kibuku",
+      "Kabweri"
+    ]
+  },
+  {
+    "name": "Kikuube",
+    "base_units": [
+      "Buhaguzi",
+      "Buhaguzi East"
+    ]
+  },
+  {
+    "name": "Kiruhura",
+    "base_units": [
+      "Nyabushozi",
+      "Kashongi",
+      "Kazo"
+    ]
+  },
+  {
+    "name": "Kiryandongo",
+    "base_units": [
+      "Kibanda North",
+      "Kibanda South"
+    ]
+  },
+  {
+    "name": "Kisoro",
+    "base_units": [
+      "Bufumbira North",
+      "Bufumbira East",
+      "Bufumbira South",
+      "Bukimbiri",
+      "Kisoro Municipality"
+    ]
+  },
+  {
+    "name": "Kitgum",
+    "base_units": [
+      "Chua East",
+      "Chua West",
+      "Kitgum Municipality"
+    ]
+  },
+  {
+    "name": "Koboko",
+    "base_units": [
+      "Koboko North",
+      "Koboko",
+      "Koboko Municipality"
+    ]
+  },
+  {
+    "name": "Kole",
+    "base_units": [
+      "Kole North",
+      "Kole South"
+    ]
+  },
+  {
+    "name": "Kotido",
+    "base_units": [
+      "Jie",
+      "Kotido Municipality"
+    ]
+  },
+  {
+    "name": "Kumi",
+    "base_units": [
+      "Kumi",
+      "Kanyum",
+      "Kumi Municipality"
+    ]
+  },
+  {
+    "name": "Kween",
+    "base_units": [
+      "Kween"
+    ]
+  },
+  {
+    "name": "Kyankwanzi",
+    "base_units": [
+      "Butemba",
+      "Kyankwanzi"
+    ]
+  },
+  {
+    "name": "Kyegegwa",
+    "base_units": [
+      "Kyaka North",
+      "Kyaka South",
+      "Kyaka Central"
+    ]
+  },
+  {
+    "name": "Kyenjojo",
+    "base_units": [
+      "Mwenge North",
+      "Mwenge South",
+      "Mwenge Central"
+    ]
+  },
+  {
+    "name": "Kyotera",
+    "base_units": [
+      "Kyotera",
+      "Kakuuto"
+    ]
+  },
+  {
+    "name": "Lamwo",
+    "base_units": [
+      "Lamwo East",
+      "Lamwo"
+    ]
+  },
+  {
+    "name": "Lira",
+    "base_units": [
+      "Erute North",
+      "Erute South",
+      "Lira City East",
+      "Lira City West"
+    ]
+  },
+  {
+    "name": "Luuka",
+    "base_units": [
+      "Luuka North",
+      "Luuka South"
+    ]
+  },
+  {
+    "name": "Luweero",
+    "base_units": [
+      "Bamunanika",
+      "Katikamu North",
+      "Katikamu South"
+    ]
+  },
+  {
+    "name": "Lwengo",
+    "base_units": [
+      "Bukoto South",
+      "Bukoto West",
+      "Bukoto Mid-West"
+    ]
+  },
+  {
+    "name": "Lyantonde",
+    "base_units": [
+      "Kabula"
+    ]
+  },
+  {
+    "name": "Manafwa",
+    "base_units": [
+      "Bubulo West",
+      "Butiru"
+    ]
+  },
+  {
+    "name": "Maracha",
+    "base_units": [
+      "Maracha",
+      "Maracha East"
+    ]
+  },
+  {
+    "name": "Masaka",
+    "base_units": [
+      "Bukoto East",
+      "Bukoto Central",
+      "Kimanya-Kabonera",
+      "Nyendo-Mukungwe"
+    ]
+  },
+  {
+    "name": "Masindi",
+    "base_units": [
+      "Bujenje",
+      "Buruli",
+      "Masindi Municipality"
+    ]
+  },
+  {
+    "name": "Mayuge",
+    "base_units": [
+      "Bunya East",
+      "Bunya South",
+      "Bunya West"
+    ]
+  },
+  {
+    "name": "Mbale",
+    "base_units": [
+      "Bungokho North",
+      "Bungokho South",
+      "Bungokho Central",
+      "Industrial Division",
+      "Northern Division"
+    ]
+  },
+  {
+    "name": "Mbarara",
+    "base_units": [
+      "Kashari North",
+      "Kashari South",
+      "Mbarara City North",
+      "Mbarara City South"
+    ]
+  },
+  {
+    "name": "Mitooma",
+    "base_units": [
+      "Ruhinda",
+      "Ruhinda North"
+    ]
+  },
+  {
+    "name": "Mityana",
+    "base_units": [
+      "Busujju",
+      "Mityana North",
+      "Mityana South"
+    ]
+  },
+  {
+    "name": "Moroto",
+    "base_units": [
+      "Matheniko",
+      "Tepeth",
+      "Moroto Municipality"
+    ]
+  },
+  {
+    "name": "Moyo",
+    "base_units": [
+      "West Moyo",
+      "Obongi"
+    ]
+  },
+  {
+    "name": "Mpigi",
+    "base_units": [
+      "Mawokota North",
+      "Mawokota South"
+    ]
+  },
+  {
+    "name": "Mubende",
+    "base_units": [
+      "Buwekula South",
+      "Buwekula",
+      "Kasambya"
+    ]
+  },
+  {
+    "name": "Mukono",
+    "base_units": [
+      "Mukono North",
+      "Mukono South",
+      "Nakifuma",
+      "Mukono Municipality"
+    ]
+  },
+  {
+    "name": "Nakapiripirit",
+    "base_units": [
+      "Chekwii East",
+      "Chekwii",
+      "Pian"
+    ]
+  },
+  {
+    "name": "Nakaseke",
+    "base_units": [
+      "Nakaseke Central",
+      "Nakaseke North",
+      "Nakaseke South"
+    ]
+  },
+  {
+    "name": "Nakasongola",
+    "base_units": [
+      "Budyebo",
+      "Nakasongola"
+    ]
+  },
+  {
+    "name": "Namayingo",
+    "base_units": [
+      "Bukholi South",
+      "Bukholi Islands"
+    ]
+  },
+  {
+    "name": "Namisindwa",
+    "base_units": [
+      "Bubulo East"
+    ]
+  },
+  {
+    "name": "Namutumba",
+    "base_units": [
+      "Busiki",
+      "Busiki North",
+      "Bukono"
+    ]
+  },
+  {
+    "name": "Napak",
+    "base_units": [
+      "Bokora",
+      "Bokora East"
+    ]
+  },
+  {
+    "name": "Nebbi",
+    "base_units": [
+      "Padyere",
+      "Nebbi Municipality"
+    ]
+  },
+  {
+    "name": "Ngora",
+    "base_units": [
+      "Ngora",
+      "Kapir"
+    ]
+  },
+  {
+    "name": "Ntoroko",
+    "base_units": [
+      "Ntoroko"
+    ]
+  },
+  {
+    "name": "Ntungamo",
+    "base_units": [
+      "Kajara",
+      "Ruhaama",
+      "Rushenyi",
+      "Ntungamo Municipality"
+    ]
+  },
+  {
+    "name": "Nwoya",
+    "base_units": [
+      "Nwoya",
+      "Nwoya East"
+    ]
+  },
+  {
+    "name": "Otuke",
+    "base_units": [
+      "Otuke",
+      "Otuke East"
+    ]
+  },
+  {
+    "name": "Oyam",
+    "base_units": [
+      "Oyam North",
+      "Oyam South"
+    ]
+  },
+  {
+    "name": "Pader",
+    "base_units": [
+      "Aruu",
+      "Aruu North"
+    ]
+  },
+  {
+    "name": "Pallisa",
+    "base_units": [
+      "Agule",
+      "Kibale",
+      "Gogonyo",
+      "Pallisa"
+    ]
+  },
+  {
+    "name": "Rakai",
+    "base_units": [
+      "Kooki",
+      "Buyamba"
+    ]
+  },
+  {
+    "name": "Rubanda",
+    "base_units": [
+      "Rubanda East",
+      "Rubanda West"
+    ]
+  },
+  {
+    "name": "Rubirizi",
+    "base_units": [
+      "Bunyaruguru",
+      "Katerera"
+    ]
+  },
+  {
+    "name": "Rukungiri",
+    "base_units": [
+      "Rubabo",
+      "Rujumbura",
+      "Rukungiri Municipality"
+    ]
+  },
+  {
+    "name": "Sembabule",
+    "base_units": [
+      "Lwemiyaga",
+      "Mawogola North",
+      "Mawogola South",
+      "Mawogola West"
+    ]
+  },
+  {
+    "name": "Serere",
+    "base_units": [
+      "Serere",
+      "Kasilo"
+    ]
+  },
+  {
+    "name": "Sheema",
+    "base_units": [
+      "Sheema North",
+      "Sheema South",
+      "Sheema Municipality"
+    ]
+  },
+  {
+    "name": "Sironko",
+    "base_units": [
+      "Budadiri East",
+      "Budadiri West"
+    ]
+  },
+  {
+    "name": "Soroti",
+    "base_units": [
+      "Soroti County",
+      "Dakabela",
+      "Gweri",
+      "Soroti City East",
+      "Soroti City West"
+    ]
+  },
+  {
+    "name": "Tororo",
+    "base_units": [
+      "West Budama Central",
+      "West Budama South",
+      "West Budama North",
+      "West Budama North East",
+      "Tororo County",
+      "Tororo Municipality"
+    ]
+  },
+  {
+    "name": "Wakiso",
+    "base_units": [
+      "Busiro East",
+      "Busiro North",
+      "Busiro South",
+      "Kyadondo East",
+      "Kira Municipality",
+      "Entebbe Municipality",
+      "Makindye Ssabagabo Municipality",
+      "Nansana Municipality"
+    ]
+  },
+  {
+    "name": "Yumbe",
+    "base_units": [
+      "Aringa",
+      "Aringa East",
+      "Aringa North",
+      "Aringa South"
+    ]
+  },
+  {
+    "name": "Zombo",
+    "base_units": [
+      "Okoro"
+    ]
+  }
+]

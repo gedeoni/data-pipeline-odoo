@@ -1,0 +1,19 @@
+services:
+  odoo:
+    image: odoo:17
+    ports:
+      - "8069:8069"
+    environment:
+      HOST: host.docker.internal
+      PORT: 5432
+      USER: odoo
+      PASSWORD: odoo
+      # DATABASE: odoo
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - odoo_data:/var/lib/odoo
+      - ./addons:/mnt/extra-addons
+
+volumes:
+  odoo_data:

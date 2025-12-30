@@ -1,0 +1,555 @@
+[
+  {
+    "name": "Baringo",
+    "base_units": [
+      "Baringo Central",
+      "Baringo North",
+      "Baringo South",
+      "Baringo West",
+      "Eldama Ravine",
+      "Mogotio",
+      "Tiaty East",
+      "Tiaty Central"
+    ]
+  },
+  {
+    "name": "Bomet",
+    "base_units": [
+      "Bomet Central",
+      "Bomet East",
+      "Chepalungu",
+      "Konoin",
+      "Sotik"
+    ]
+  },
+  {
+    "name": "Bungoma",
+    "base_units": [
+      "Bumula",
+      "Kabuchai",
+      "Kanduyi",
+      "Kimilili",
+      "Mount Elgon",
+      "Sirisia",
+      "Tongaren",
+      "Webuye East",
+      "Webuye West"
+    ]
+  },
+  {
+    "name": "Busia",
+    "base_units": [
+      "Budalangi",
+      "Butula",
+      "Funyula",
+      "Matayos",
+      "Nambale",
+      "Teso North",
+      "Teso South"
+    ]
+  },
+  {
+    "name": "Elgeyo-Marakwet",
+    "base_units": [
+      "Keiyo North",
+      "Keiyo South",
+      "Marakwet East",
+      "Marakwet West"
+    ]
+  },
+  {
+    "name": "Embu",
+    "base_units": [
+      "Manyatta",
+      "Mbeere North",
+      "Mbeere South",
+      "Runyenjes"
+    ]
+  },
+  {
+    "name": "Garissa",
+    "base_units": [
+      "Balambala",
+      "Dadaab",
+      "Fafi",
+      "Garissa Township",
+      "Hulugho",
+      "Ijara",
+      "Lagdera"
+    ]
+  },
+  {
+    "name": "Homa Bay",
+    "base_units": [
+      "Homa Bay Town",
+      "Kabondo",
+      "Karachuonyo",
+      "Kasipul",
+      "Mbita",
+      "Ndhiwa East",
+      "Ndhiwa West",
+      "Rangwe",
+      "Suba"
+    ]
+  },
+  {
+    "name": "Isiolo",
+    "base_units": [
+      "Garbatulla",
+      "Isiolo",
+      "Merti"
+    ]
+  },
+  {
+    "name": "Kajiado",
+    "base_units": [
+      "Isinya",
+      "Kajiado Central",
+      "Kajiado North",
+      "Kajiado West",
+      "Loitokitok",
+      "Mashuuru"
+    ]
+  },
+  {
+    "name": "Kakamega",
+    "base_units": [
+      "Butere",
+      "Kakamega Central",
+      "Kakamega East",
+      "Kakamega North",
+      "Kakamega South",
+      "Khwisero",
+      "Likuyani",
+      "Lugari",
+      "Lurambi",
+      "Matete",
+      "Matungu",
+      "Mumias East",
+      "Mumias West",
+      "Navakholo"
+    ]
+  },
+  {
+    "name": "Kericho",
+    "base_units": [
+      "Ainamoi",
+      "Belgut",
+      "Bureti",
+      "Kipkelion East",
+      "Kipkelion West",
+      "Sigowet"
+    ]
+  },
+  {
+    "name": "Kiambu",
+    "base_units": [
+      "Gatundu North",
+      "Gatundu South",
+      "Githunguri",
+      "Juja",
+      "Kabete",
+      "Kiambaa",
+      "Kiambu",
+      "Kikuyu",
+      "Lari",
+      "Limuru",
+      "Ruiru",
+      "Thika Town"
+    ]
+  },
+  {
+    "name": "Kilifi",
+    "base_units": [
+      "Ganze",
+      "Kaloleni",
+      "Kilifi North",
+      "Kilifi South",
+      "Magarini North",
+      "Magarini South",
+      "Malindi",
+      "Rabai"
+    ]
+  },
+  {
+    "name": "Kirinyaga",
+    "base_units": [
+      "Kirinyaga Central",
+      "Kirinyaga East",
+      "Kirinyaga West",
+      "Mwea East",
+      "Mwea West"
+    ]
+  },
+  {
+    "name": "Kisii",
+    "base_units": [
+      "Gucha",
+      "Gucha South",
+      "Iritanyi",
+      "Kenyenya",
+      "Kisii Central",
+      "Kisii South",
+      "Kitutu Central",
+      "Marani",
+      "Masaba South",
+      "Nyamache",
+      "Sameta"
+    ]
+  },
+  {
+    "name": "Kisumu",
+    "base_units": [
+      "Kisumu Central",
+      "Kisumu East",
+      "Kisumu West",
+      "Muhoroni",
+      "Nyakach",
+      "Nyando",
+      "Seme"
+    ]
+  },
+  {
+    "name": "Kitui",
+    "base_units": [
+      "Kitui Central",
+      "Kitui East",
+      "Kitui Rural",
+      "Kitui South",
+      "Kitui West",
+      "Mwingi Central",
+      "Mwingi North",
+      "Mwingi West"
+    ]
+  },
+  {
+    "name": "Kwale",
+    "base_units": [
+      "Kinango",
+      "Lunga Lunga",
+      "Matuga",
+      "Msambweni",
+      "Samburu-Kwale"
+    ]
+  },
+  {
+    "name": "Laikipia",
+    "base_units": [
+      "Laikipia Central",
+      "Laikipia East",
+      "Laikipia North",
+      "Laikipia West",
+      "Nyahururu"
+    ]
+  },
+  {
+    "name": "Lamu",
+    "base_units": [
+      "Lamu East",
+      "Lamu West"
+    ]
+  },
+  {
+    "name": "Machakos",
+    "base_units": [
+      "Kathiani",
+      "Machakos Town",
+      "Masinga",
+      "Matungulu",
+      "Mavoko",
+      "Mwala",
+      "Yatta"
+    ]
+  },
+  {
+    "name": "Makueni",
+    "base_units": [
+      "Kaiti",
+      "Kibwezi East",
+      "Kibwezi West",
+      "Kilome",
+      "Makueni",
+      "Mbooni"
+    ]
+  },
+  {
+    "name": "Mandera",
+    "base_units": [
+      "Banissa",
+      "Lafey",
+      "Mandera East",
+      "Mandera North",
+      "Mandera South",
+      "Mandera West"
+    ]
+  },
+  {
+    "name": "Marsabit",
+    "base_units": [
+      "Illeret",
+      "Laisamis",
+      "Moyale",
+      "North Horr",
+      "Saku"
+    ]
+  },
+  {
+    "name": "Meru",
+    "base_units": [
+      "Akachiu",
+      "Buuri",
+      "Igembe Central",
+      "Igembe North",
+      "Imenti Central",
+      "Imenti North",
+      "Imenti South",
+      "Maua",
+      "Tigania East",
+      "Tigania West"
+    ]
+  },
+  {
+    "name": "Migori",
+    "base_units": [
+      "Awendo",
+      "Kuria East",
+      "Kuria West",
+      "Mabera",
+      "Ntimaru",
+      "Nyatike",
+      "Rongo",
+      "Suna East",
+      "Suna West",
+      "Uriri"
+    ]
+  },
+  {
+    "name": "Mombasa",
+    "base_units": [
+      "Changamwe",
+      "Jomvu",
+      "Kisauni",
+      "Likoni",
+      "Mvita",
+      "Nyali"
+    ]
+  },
+  {
+    "name": "Murang'A",
+    "base_units": [
+      "Gatanga",
+      "Kahuro",
+      "Kandara",
+      "Kangema",
+      "Kigumo",
+      "Kiharu",
+      "Mathioya",
+      "Murang'a South"
+    ]
+  },
+  {
+    "name": "Nairobi City",
+    "base_units": [
+      "Dagoretti North",
+      "Dagoretti South",
+      "Embakasi Central",
+      "Embakasi East",
+      "Embakasi North",
+      "Embakasi South",
+      "Embakasi West",
+      "Kamukunji",
+      "Kasarani",
+      "Kibra",
+      "Lang'ata",
+      "Makadara",
+      "Mathare",
+      "Roysambu",
+      "Ruaraka",
+      "Starehe",
+      "Westlands"
+    ]
+  },
+  {
+    "name": "Nakuru",
+    "base_units": [
+      "Bahati",
+      "Gilgil",
+      "Kuresoi North",
+      "Kuresoi South",
+      "Molo",
+      "Naivasha",
+      "Nakuru Town East",
+      "Nakuru Town West",
+      "Njoro",
+      "Rongai",
+      "Subukia"
+    ]
+  },
+  {
+    "name": "Nandi",
+    "base_units": [
+      "Aldai",
+      "Chesumei",
+      "Emgwen",
+      "Mosop",
+      "Nandi Hills",
+      "Tindiret"
+    ]
+  },
+  {
+    "name": "Narok",
+    "base_units": [
+      "Narok East",
+      "Narok North",
+      "Narok South",
+      "Narok West",
+      "Transmara East",
+      "Transmara West"
+    ]
+  },
+  {
+    "name": "Nyamira",
+    "base_units": [
+      "Borabu",
+      "Manga",
+      "Masaba North",
+      "Nyamira North",
+      "Nyamira South"
+    ]
+  },
+  {
+    "name": "Nyandarua",
+    "base_units": [
+      "Kinangop",
+      "Kipipiri",
+      "Ndaragwa",
+      "Ol Joro Orok",
+      "Ol Kalou"
+    ]
+  },
+  {
+    "name": "Nyeri",
+    "base_units": [
+      "Kieni East",
+      "Kieni West",
+      "Mathira East",
+      "Mathira West",
+      "Mukurweini",
+      "Nyeri Town",
+      "Othaya",
+      "Tetu"
+    ]
+  },
+  {
+    "name": "Samburu",
+    "base_units": [
+      "Samburu East",
+      "Samburu North",
+      "Samburu West"
+    ]
+  },
+  {
+    "name": "Siaya",
+    "base_units": [
+      "Alego Usonga",
+      "Bondo",
+      "Gem",
+      "Rarieda",
+      "Ugenya",
+      "Ugunja"
+    ]
+  },
+  {
+    "name": "Taita-Taveta",
+    "base_units": [
+      "Mwatate",
+      "Taveta",
+      "Voi",
+      "Wundanyi"
+    ]
+  },
+  {
+    "name": "Tana River",
+    "base_units": [
+      "Bura",
+      "Galole",
+      "Garsen"
+    ]
+  },
+  {
+    "name": "Tharaka-Nithi",
+    "base_units": [
+      "Chiakariga",
+      "Chuka",
+      "Igambang'ombe",
+      "Maara",
+      "Muthambi",
+      "Tharaka North",
+      "Tharaka South"
+    ]
+  },
+  {
+    "name": "Trans Nzoia",
+    "base_units": [
+      "Cherangany",
+      "Endebess",
+      "Kiminini",
+      "Kwanza",
+      "Saboti"
+    ]
+  },
+  {
+    "name": "Turkana",
+    "base_units": [
+      "Loima",
+      "Turkana Central",
+      "Turkana East",
+      "Turkana North",
+      "Turkana South",
+      "Turkana West"
+    ]
+  },
+  {
+    "name": "Uasin Gishu",
+    "base_units": [
+      "Ainabkoi",
+      "Kapseret",
+      "Kesses",
+      "Moiben",
+      "Soy",
+      "Turbo"
+    ]
+  },
+  {
+    "name": "Vihiga",
+    "base_units": [
+      "Emuhaya",
+      "Hamisi",
+      "Luanda",
+      "Sabatia",
+      "Vihiga"
+    ]
+  },
+  {
+    "name": "Wajir",
+    "base_units": [
+      "Eldas",
+      "Tarbaj",
+      "Wajir East",
+      "Wajir North",
+      "Wajir South",
+      "Wajir West"
+    ]
+  },
+  {
+    "name": "West Pokot",
+    "base_units": [
+      "Kacheliba",
+      "Kapenguria",
+      "Pokot Central",
+      "Pokot North",
+      "Pokot South",
+      "West Pokot"
+    ]
+  }
+]
