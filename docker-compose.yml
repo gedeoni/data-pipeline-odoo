@@ -107,76 +107,71 @@ services:
       - ./clickhouse/users.d:/etc/clickhouse-server/users.d
       - ./clickhouse/users.xml:/etc/clickhouse-server/users.xml
 
-  superset:
-    build:
-      context: ./superset
-      dockerfile: Dockerfile
-    ports:
-      - "8089:8088"
-    env_file:
-      - ./superset/.env
-    environment:
-      SUPERSET_ENV: production
-      SUPERSET_CONFIG_PATH: /app/pythonpath/superset_config.py
-    depends_on:
-      - db
-      - redis
-      - superset-worker
-    volumes:
-      - superset_home:/app/superset_home
-      - ./superset/superset_config.py:/app/pythonpath/superset_config.py
-    command:
-      - /bin/bash
-      - -c
-      - |
-        superset db upgrade
-        superset fab create-admin --username admin --firstname Superset --lastname Admin --email admin@superset.com --password admin
-        superset init
-        superset run -h 0.0.0.0 -p 8088
-
-  db:
+  superset-db:
     image: postgres:15
-    env_file:
-      - ./superset/.env
+    container_name: superset_db
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-superset}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-superset}
-      POSTGRES_DB: ${POSTGRES_DB:-superset}
+      POSTGRES_USER: superset
+      POSTGRES_PASSWORD: superset
+      POSTGRES_DB: superset
     volumes:
       - superset_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "superset"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
 
-  redis:
+  superset-redis:
     image: redis:7
+    container_name: superset_redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
 
-  superset-worker:
-    build:
-      context: ./superset
-      dockerfile: Dockerfile
-    env_file:
-      - ./superset/.env
+  superset:
+    image: apache/superset:latest
+    container_name: superset
+    user: "0:0"
+    ports:
+      - "8089:8088"
     environment:
       SUPERSET_ENV: production
-      SUPERSET_CONFIG_PATH: /app/pythonpath/superset_config.py
+      SUPERSET_LOAD_EXAMPLES: "no"
+      SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY:-this_is_not_secure_change_me}
+      SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://superset:superset@superset-db/superset
+      REDIS_HOST: superset-redis
+      REDIS_PORT: "6379"
     volumes:
       - superset_home:/app/superset_home
-      - ./superset/superset_config.py:/app/pythonpath/superset_config.py
     command:
       - /bin/bash
       - -c
       - |
-        superset db upgrade
-        superset init
-        celery --app=superset.tasks.celery_app:app worker --loglevel=INFO --concurrency=2
+        chown -R superset:superset /app/.venv
+        /app/.venv/bin/python -m ensurepip --upgrade
+        /app/.venv/bin/python -m pip install --no-cache-dir psycopg2-binary
+        su superset -c "/app/.venv/bin/superset db upgrade"
+        su superset -c "/app/.venv/bin/superset fab create-admin --username ${SUPERSET_ADMIN_USERNAME:-admin} --firstname Superset --lastname Admin --email ${SUPERSET_ADMIN_EMAIL:-admin@superset.com} --password ${SUPERSET_ADMIN_PASSWORD:-admin}" || true
+        su superset -c "/app/.venv/bin/superset init"
+        exec su superset -c "/app/.venv/bin/superset run -h 0.0.0.0 -p 8088"
     depends_on:
-      - db
-      - redis
+      superset-db:
+        condition: service_healthy
+      superset-redis:
+        condition: service_healthy
+    restart: always
 
   odoo:
     image: odoo:17
     ports:
       - "8069:8069"
     environment:
-      HOST: host.docker.internal
+      HOST: odoo-postgres
       PORT: 5432
       USER: odoo
       PASSWORD: odoo
@@ -186,6 +181,39 @@ services:
     volumes:
       - odoo_data:/var/lib/odoo
       - ./odoo/addons:/mnt/extra-addons
+    depends_on:
+      odoo-postgres:
+        condition: service_healthy
+      odoo-init:
+        condition: service_completed_successfully
+
+  odoo-init:
+    image: odoo:17
+    environment:
+      HOST: odoo-postgres
+      PORT: 5432
+      USER: odoo
+      PASSWORD: odoo
+    command: ["odoo", "-i", "base", "-d", "odoo", "--stop-after-init"]
+    depends_on:
+      odoo-postgres:
+        condition: service_healthy
+    restart: "no"
+
+  odoo-postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: odoo
+      POSTGRES_DB: odoo
+    volumes:
+      - odoo_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "odoo"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
 
 volumes:
   postgres-db-volume:
@@ -194,3 +222,5 @@ volumes:
   superset_db:
   superset_home:
   odoo_data:
+  odoo_postgres_data:
+

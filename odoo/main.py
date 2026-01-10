@@ -35,8 +35,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Seed realistic inventory + 180 days stock movements into Odoo 17")
     p.add_argument("--base-url", default=os.getenv("ODOO_URL", "http://localhost:8069"))
     p.add_argument("--db", default=os.getenv("ODOO_DB", "odoo"))
-    p.add_argument("--user", default=os.getenv("ODOO_USER", "odoo@gmail.com"))
-    p.add_argument("--password", default=os.getenv("ODOO_PASSWORD", "odoo"))
+    p.add_argument("--user", default=os.getenv("ODOO_USER", "admin"))
+    p.add_argument("--password", default=os.getenv("ODOO_PASSWORD", "admin"))
 
     p.add_argument("--days", type=int, default=180)
     p.add_argument("--scale", choices=["small", "medium", "large"], default="medium")

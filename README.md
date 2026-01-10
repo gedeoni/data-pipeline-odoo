@@ -62,12 +62,22 @@ graph LR
 docker compose up --build
 ```
 
-2) Initialize Airflow metadata DB (if first run):
+2) Setup Odoo
+- **Install modules**: Sales, Purchase, Inventory.
+- **Create companies**: Kenya, Uganda, Rwanda.
+- **Run the seeder**:
+  Navigate to the `odoo` directory, create a virtual environment, and run the script:
 
-```bash
-docker compose run --rm airflow-init
-```
+  ```bash
+  cd odoo
+  python3 -m venv venv
+  source venv/bin/activate  # Windows: venv\Scripts\activate
+  pip install -r requirements.txt
 
+  # Run seeder (refer to odoo/README.md for more options)
+  python main.py --orders --scale medium --days 60 --countries rw,ug,ke
+  ```
+  
 3) Configure Airflow connections (required by the DAG):
 
 Create the following connections (via UI or CLI). The IDs below must match what is used in your DAGs.
@@ -75,18 +85,18 @@ Create the following connections (via UI or CLI). The IDs below must match what 
 ```bash
 # Example: Create connections via CLI
 # Odoo (Source)
-docker compose exec airflow-webserver airflow connections add 'odoo_default' \
+docker-compose exec airflow-webserver airflow connections add 'odoo_default' \
     --conn-type 'http' --conn-host 'odoo' --conn-port '8069' \
-    --conn-login 'gedeoniyonkuru@gmail.com' --conn-password 'gedeon' \
+    --conn-login 'admin' --conn-password 'admin' \
     --conn-extra '{"scheme":"http","db":"odoo","api_path":"/jsonrpc"}'
 
+# For windows power shell
+docker-compose exec airflow-webserver airflow connections add "odoo_default" --conn-type "http" --conn-host "odoo" --conn-port "8069" --conn-login "admin" --conn-password "admin" --conn-extra '{\"scheme\":\"http\",\"db\":\"odoo\",\"api_path\":\"/jsonrpc\"}'
 # ClickHouse (Destination)
-docker compose exec airflow-webserver airflow connections add 'clickhouse_default' \
-    --conn-type 'generic' --conn-host 'clickhouse' --conn-port '9000'
+docker-compose exec airflow-webserver airflow connections add 'clickhouse_default' --conn-type 'generic' --conn-host 'clickhouse' --conn-port '9000'
 
 # Superset (BI Trigger)
-docker compose exec airflow-webserver airflow connections add 'superset_default' \
-    --conn-type 'http' --conn-host 'superset' --conn-port '8088' --conn-login 'admin' --conn-password 'admin'
+docker-compose exec airflow-webserver airflow connections add 'superset_default' --conn-type 'http' --conn-host 'superset' --conn-port '8088' --conn-login 'admin' --conn-password 'admin'
 ```
 
 *Note: Ensure the Connection IDs (`odoo_default`, etc.) match the variables or defaults in your DAG code.*
@@ -94,13 +104,13 @@ docker compose exec airflow-webserver airflow connections add 'superset_default'
 4) Import Airflow variables (defaults provided):
 
 ```bash
-docker compose exec airflow-webserver airflow variables import /opt/airflow/dags/variables.json
+docker-compose exec airflow-webserver airflow variables import /opt/airflow/dags/variables.json
 ```
 
 5) Run the DAG locally:
 
 ```bash
-docker compose exec airflow-webserver airflow dags test odoo_clickhouse_inventory_analytics 2024-01-15
+docker-compose exec airflow-webserver airflow dags test odoo_clickhouse_inventory_analytics 2024-01-15
 ```
 
 ## Key pipeline logic
