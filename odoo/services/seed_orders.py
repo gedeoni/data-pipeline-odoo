@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from collections import defaultdict
 from typing import Callable
 
-from database.odoo_client import OdooClient
+from database.odoo_client import OdooClient, OdooRPCError
 from entities import Company, Product
 from dto import AnomalyEvent
 
@@ -24,6 +24,18 @@ def _date_range(end_date: dt.date, days: int) -> list[dt.date]:
 
 def _dt_at(day: dt.date, *, hour: int, minute: int) -> str:
     return dt.datetime(day.year, day.month, day.day, hour, minute, 0).isoformat(sep=" ")
+
+
+def _is_already_confirmed_error(exc: OdooRPCError) -> bool:
+    data = exc.data or {}
+    message = ""
+    if isinstance(data, dict):
+        detail = data.get("data") or {}
+        if isinstance(detail, dict):
+            message = str(detail.get("message") or "")
+        if not message:
+            message = str(data.get("message") or "")
+    return "not in a state requiring confirmation" in message
 
 
 class OrderSeeder:
@@ -489,7 +501,31 @@ class OrderSeeder:
             return
         try:
             so_id = self.client.create("sale.order", so_vals, allowed_company_ids=[company.company_id], company_id=company.company_id)
-            self.client.call_kw("sale.order", "action_confirm", args=[[so_id]], allowed_company_ids=[company.company_id], company_id=company.company_id)
+            so_state = self.client.read(
+                "sale.order",
+                [so_id],
+                fields=["state"],
+                allowed_company_ids=[company.company_id],
+                company_id=company.company_id,
+            )
+            state = (so_state or [{}])[0].get("state")
+            if state in {"draft", "sent"}:
+                try:
+                    self.client.call_kw(
+                        "sale.order",
+                        "action_confirm",
+                        args=[[so_id]],
+                        allowed_company_ids=[company.company_id],
+                        company_id=company.company_id,
+                    )
+                except OdooRPCError as exc:
+                    if _is_already_confirmed_error(exc):
+                        _logger.info(
+                            "%s Sales order already confirmed by server automation; skipping action_confirm.",
+                            self._log_ctx(company),
+                        )
+                    else:
+                        raise
         except Exception as exc:
             _logger.exception("%s Sales order creation/confirmation failed: %s", self._log_ctx(company), exc)
             return

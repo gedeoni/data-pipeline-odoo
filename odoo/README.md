@@ -25,6 +25,11 @@ By default, the script uses **stock pickings** directly. If using `--orders`, fu
 ### Python
 
 - Python 3.10+ recommended
+Create virtual env
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
 
 Install dependencies:
 

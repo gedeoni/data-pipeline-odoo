@@ -76,11 +76,13 @@ Create the following connections (via UI or CLI). The IDs below must match what 
 # Example: Create connections via CLI
 # Odoo (Source)
 docker compose exec airflow-webserver airflow connections add 'odoo_default' \
-    --conn-type 'http' --conn-host 'odoo' --conn-port '8069' --conn-login 'admin' --conn-password 'admin'
+    --conn-type 'http' --conn-host 'odoo' --conn-port '8069' \
+    --conn-login 'gedeoniyonkuru@gmail.com' --conn-password 'gedeon' \
+    --conn-extra '{"scheme":"http","db":"odoo","api_path":"/jsonrpc"}'
 
 # ClickHouse (Destination)
 docker compose exec airflow-webserver airflow connections add 'clickhouse_default' \
-    --conn-type 'clickhouse' --conn-host 'clickhouse' --conn-port '8123'
+    --conn-type 'generic' --conn-host 'clickhouse' --conn-port '9000'
 
 # Superset (BI Trigger)
 docker compose exec airflow-webserver airflow connections add 'superset_default' \
@@ -133,6 +135,21 @@ python scripts/reset_airflow_clickhouse.py
 chmod +x scripts/reset_odoo_db.sh
 ./scripts/reset_odoo_db.sh
 ```
+
+## Superset ClickHouse connection (UI)
+
+Use these values in Superset's "Add Database" form:
+
+- Database Name: `ClickHouse`
+- SQLAlchemy URI: `clickhouse+http://default:@clickhouse:8123/default`
+
+If you prefer the Basic fields instead of URI:
+
+- Host: `clickhouse`
+- Port: `8123`
+- Database: `default`
+- Username: `default`
+- Password: (leave blank)
 
 ## Access points (default ports)
 

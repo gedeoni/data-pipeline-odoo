@@ -12,906 +12,55 @@ from __future__ import annotations
 import json
 import logging
 import time
-from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
-from datetime import date as dt_date
-from urllib.parse import urlparse, urlunparse
-
-import requests
+from typing import Any, Dict, List, Optional
 from airflow import DAG
 from airflow.decorators import task
-from airflow.hooks.base import BaseHook
 from airflow.models import Variable
+from collections import defaultdict
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.email import EmailOperator
 from airflow.utils.task_group import TaskGroup
 from airflow.utils.trigger_rule import TriggerRule
-from clickhouse_driver import Client as ClickHouseClient
-
-# -------------------- Constants --------------------
-
-DAG_ID = "odoo_clickhouse_inventory_analytics"
-
-# Connection IDs: These strings must match the 'Conn Id' configured in
-# Airflow Admin -> Connections. Do not hardcode credentials here.
-ODOO_CONN_ID = "ODOO_CONN_ID"
-CLICKHOUSE_CONN_ID = "CLICKHOUSE_CONN_ID"
-SUPERSET_CONN_ID = "SUPERSET_CONN_ID"
-EMAIL_CONN_ID = "EMAIL_CONN_ID"
-
-# Airflow Variable Keys: Configure the values for these keys in Airflow Admin -> Variables.
-# The strings below are the keys, not the values.
-VAR_DEAD_STOCK_DAYS = "dead_stock_days"
-VAR_ANOMALY_PCT = "anomaly_pct"
-VAR_OTIF_THRESHOLD = "otif_threshold"
-VAR_ABC_A_PCT = "abc_a_pct"
-VAR_ABC_B_PCT = "abc_b_pct"
-VAR_ABC_C_PCT = "abc_c_pct"
-VAR_FULL_REFRESH_MODELS = "full_refresh_models"
-VAR_FORECAST_SCOPE = "forecast_top_n_or_only_class_a"
-VAR_PROCUREMENT_EMAIL = "procurement_manager_email"
-VAR_HELPDESK_TEAM_ID = "odoo_helpdesk_team_id"
-
-DEFAULT_ARGS = {
-    "owner": "data-platform",
-    "retries": 2,
-    "retry_delay": timedelta(minutes=5),
-    "execution_timeout": timedelta(hours=2),
-    "depends_on_past": False,
-}
-
-BATCH_SIZE = 5000
-REQUEST_TIMEOUT = 30
-MAX_RETRIES = 5
-BACKOFF_BASE_SECONDS = 2
-
-RAW_TABLES = {
-    "stock.move.line": "raw_stock_move_line",
-    "stock.quant": "raw_stock_quant",
-    "stock.move": "raw_stock_move",
-    "purchase.order": "raw_purchase_order",
-    "product.product": "raw_product_product",
-    "product.template": "raw_product_template",
-    "stock.valuation.layer": "raw_stock_valuation_layer",
-    "stock.location": "raw_stock_location",
-    "res.partner": "raw_res_partner",
-}
-
-STRING_FIELDS = {
-    "state",
-    "origin",
-    "name",
-    "usage",
-    "default_code",
-    "type",
-}
-
-MODEL_FIELD_ALIASES = {
-    # Odoo 17 uses `quantity` and `date` on stock.move.line.
-    "stock.move.line": {
-        "quantity": "qty_done",
-        "date": "date_done",
-    },
-    # Odoo 17 uses `quantity`, `date`, and `date_deadline` on stock.move.
-    "stock.move": {
-        "quantity": "quantity_done",
-        "date": "date_done",
-        "date_deadline": "date_expected",
-    },
-}
-
-# -------------------- Odoo Client --------------------
-
-
-@dataclass
-class OdooConfig:
-    url: str
-    db: str
-    username: str
-    password: str
-    api_path: str
-
-
-class OdooClient:
-    """Thin JSON-RPC Odoo client with retries, pagination, and safe backoff."""
-
-    def __init__(self, config: OdooConfig):
-        self.config = config
-        self._uid: Optional[int] = None
-        self._session = requests.Session()
-
-    @property
-    def endpoint(self) -> str:
-        return f"{self.config.url.rstrip('/')}/{self.config.api_path.strip('/')}"
-
-    def _post(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        for attempt in range(1, MAX_RETRIES + 1):
-            try:
-                response = self._session.post(
-                    self.endpoint,
-                    json=payload,
-                    timeout=REQUEST_TIMEOUT,
-                )
-                response.raise_for_status()
-                data = response.json()
-                if "error" in data:
-                    raise RuntimeError(data["error"])
-                return data
-            except Exception as exc:
-                if attempt >= MAX_RETRIES:
-                    raise
-                sleep_for = BACKOFF_BASE_SECONDS * (2 ** (attempt - 1))
-                logging.warning("Odoo JSON-RPC retry %s/%s due to %s", attempt, MAX_RETRIES, exc)
-                time.sleep(sleep_for)
-        raise RuntimeError("Exceeded retries")
-
-    def authenticate(self) -> int:
-        if self._uid is not None:
-            return self._uid
-        payload = {
-            "jsonrpc": "2.0",
-            "method": "call",
-            "params": {
-                "service": "common",
-                "method": "login",
-                "args": [self.config.db, self.config.username, self.config.password],
-            },
-            "id": 1,
-        }
-        result = self._post(payload)
-        self._uid = result.get("result")
-        if not self._uid:
-            raise RuntimeError("Odoo authentication failed")
-        return self._uid
-
-    def search_read(
-        self,
-        model: str,
-        domain: List[Any],
-        fields: List[str],
-        limit: int,
-        offset: int,
-        order: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
-        uid = self.authenticate()
-        payload = {
-            "jsonrpc": "2.0",
-            "method": "call",
-            "params": {
-                "service": "object",
-                "method": "execute_kw",
-                "args": [
-                    self.config.db,
-                    uid,
-                    self.config.password,
-                    model,
-                    "search_read",
-                    [domain],
-                    {
-                        "fields": fields,
-                        "limit": limit,
-                        "offset": offset,
-                        "order": order or "id asc",
-                    },
-                ],
-            },
-            "id": 2,
-        }
-        result = self._post(payload)
-        return result.get("result", [])
-
-    def create(self, model: str, values: Dict[str, Any]) -> int:
-        uid = self.authenticate()
-        payload = {
-            "jsonrpc": "2.0",
-            "method": "call",
-            "params": {
-                "service": "object",
-                "method": "execute_kw",
-                "args": [self.config.db, uid, self.config.password, model, "create", [values]],
-            },
-            "id": 3,
-        }
-        result = self._post(payload)
-        return result.get("result")
-
-    def write(self, model: str, record_ids: List[int], values: Dict[str, Any]) -> bool:
-        uid = self.authenticate()
-        payload = {
-            "jsonrpc": "2.0",
-            "method": "call",
-            "params": {
-                "service": "object",
-                "method": "execute_kw",
-                "args": [
-                    self.config.db,
-                    uid,
-                    self.config.password,
-                    model,
-                    "write",
-                    [record_ids, values],
-                ],
-            },
-            "id": 4,
-        }
-        result = self._post(payload)
-        return bool(result.get("result"))
-
-    def paginate(
-        self,
-        model: str,
-        domain: List[Any],
-        fields: List[str],
-        batch_size: int,
-        order: str,
-    ) -> Iterable[List[Dict[str, Any]]]:
-        """Yield batches to avoid large payloads and protect the API."""
-        offset = 0
-        while True:
-            records = self.search_read(
-                model=model,
-                domain=domain,
-                fields=fields,
-                limit=batch_size,
-                offset=offset,
-                order=order,
-            )
-            if not records:
-                break
-            yield records
-            offset += batch_size
-
-
-# -------------------- ClickHouse Helpers --------------------
-
-
-def get_clickhouse_client() -> ClickHouseClient:
-    conn = BaseHook.get_connection(CLICKHOUSE_CONN_ID)
-    return ClickHouseClient(
-        host=conn.host,
-        port=conn.port or 9000,
-        user=conn.login or "default",
-        password=conn.password or "",
-        database=conn.schema or "default",
-    )
-
-
-def execute_sql(client: ClickHouseClient, sql: str, params: Optional[Dict[str, Any]] = None) -> None:
-    statements = [stmt.strip() for stmt in sql.split(";") if stmt.strip()]
-    for stmt in statements:
-        if params:
-            client.execute(stmt, params)
-        else:
-            client.execute(stmt)
-
-
-def insert_rows(
-    client: ClickHouseClient,
-    table: str,
-    rows: Sequence[Dict[str, Any]],
-    batch_size: int = 10000,
-) -> int:
-    if not rows:
-        return 0
-    columns = sorted(rows[0].keys())
-    total = 0
-    for start in range(0, len(rows), batch_size):
-        chunk = rows[start : start + batch_size]
-        values = [[row.get(col) for col in columns] for row in chunk]
-        client.execute(
-            f"INSERT INTO {table} ({', '.join(columns)}) VALUES",
-            values,
-        )
-        total += len(chunk)
-    return total
-
-
-# -------------------- Odoo Property Helpers --------------------
-
-
-def _chunked(values: Sequence[Any], size: int) -> Iterable[Sequence[Any]]:
-    for start in range(0, len(values), size):
-        yield values[start : start + size]
-
-
-def _fetch_ir_property_prices(
-    client: OdooClient,
-    company_id: Optional[int],
-    model: str,
-    record_ids: Sequence[int],
-) -> Dict[int, float]:
-    if not record_ids:
-        return {}
-
-    prices: Dict[int, Tuple[float, Optional[int]]] = {}
-    fields = ["company_id", "res_id", "value_float"]
-    for chunk in _chunked([f"{model},{record_id}" for record_id in record_ids], 1000):
-        domain: List[Any] = [
-            ["name", "=", "standard_price"],
-            ["res_id", "in", list(chunk)],
-        ]
-        if company_id:
-            domain = [
-                "|",
-                ["company_id", "=", company_id],
-                ["company_id", "=", False],
-            ] + domain
-
-        for batch in client.paginate(
-            model="ir.property",
-            domain=domain,
-            fields=fields,
-            batch_size=BATCH_SIZE,
-            order="id asc",
-        ):
-            for prop in batch:
-                res_id = prop.get("res_id") or ""
-                try:
-                    _, record_id_str = res_id.split(",", 1)
-                    record_id = int(record_id_str)
-                except (ValueError, TypeError):
-                    continue
-                value = prop.get("value_float")
-                if value is None:
-                    continue
-                prop_company_id = prop.get("company_id")
-                if isinstance(prop_company_id, (list, tuple)) and prop_company_id:
-                    prop_company_id = prop_company_id[0]
-                if not prop_company_id:
-                    prop_company_id = None
-                if record_id not in prices or (company_id and prop_company_id == company_id):
-                    prices[record_id] = (float(value), prop_company_id)
-
-    return {record_id: price for record_id, (price, _) in prices.items()}
-
-
-def _fetch_standard_prices_for_templates(
-    client: OdooClient,
-    company_id: Optional[int],
-    template_ids: Sequence[int],
-) -> Dict[int, float]:
-    template_prices = _fetch_ir_property_prices(client, company_id, "product.template", template_ids)
-    missing_templates = [template_id for template_id in template_ids if template_id not in template_prices]
-    if not missing_templates:
-        return template_prices
-
-    product_template_map: Dict[int, int] = {}
-    for batch in client.paginate(
-        model="product.product",
-        domain=[["product_tmpl_id", "in", missing_templates]],
-        fields=["id", "product_tmpl_id"],
-        batch_size=BATCH_SIZE,
-        order="id asc",
-    ):
-        for product in batch:
-            product_id = product.get("id")
-            template_id = product.get("product_tmpl_id")
-            if isinstance(template_id, (list, tuple)) and template_id:
-                template_id = template_id[0]
-            if not product_id or not template_id:
-                continue
-            product_template_map[int(product_id)] = int(template_id)
-
-    if not product_template_map:
-        return template_prices
-
-    product_prices = _fetch_ir_property_prices(
-        client,
-        company_id,
-        "product.product",
-        list(product_template_map.keys()),
-    )
-    for product_id, template_id in product_template_map.items():
-        if template_id in template_prices:
-            continue
-        price = product_prices.get(product_id)
-        if price is not None:
-            template_prices[template_id] = price
-
-    return template_prices
-
-
-# -------------------- SQL Definitions --------------------
-
-RAW_TABLE_DDL = """
--- Raw tables use ReplacingMergeTree on write_date to dedupe incremental loads.
-CREATE TABLE IF NOT EXISTS raw_stock_move_line (
-    id UInt64,
-    company_id UInt64,
-    product_id UInt64,
-    qty_done Float64,
-    location_id UInt64,
-    location_dest_id UInt64,
-    state String,
-    date_done DateTime,
-    write_date DateTime,
-    create_date DateTime
-) ENGINE = ReplacingMergeTree(write_date)
-PARTITION BY toYYYYMM(date_done)
-ORDER BY (company_id, product_id, id);
-
-CREATE TABLE IF NOT EXISTS raw_stock_quant (
-    id UInt64,
-    company_id UInt64,
-    product_id UInt64,
-    location_id UInt64,
-    quantity Float64,
-    reserved_quantity Float64,
-    write_date DateTime,
-    create_date DateTime
-) ENGINE = ReplacingMergeTree(write_date)
-ORDER BY (company_id, product_id, id);
-
-CREATE TABLE IF NOT EXISTS raw_stock_move (
-    id UInt64,
-    company_id UInt64,
-    product_id UInt64,
-    product_uom_qty Float64,
-    quantity_done Float64,
-    location_id UInt64,
-    location_dest_id UInt64,
-    state String,
-    date_expected DateTime,
-    date_done DateTime,
-    origin String,
-    write_date DateTime,
-    create_date DateTime
-) ENGINE = ReplacingMergeTree(write_date)
-PARTITION BY toYYYYMM(date_done)
-ORDER BY (company_id, product_id, id);
-
-CREATE TABLE IF NOT EXISTS raw_purchase_order (
-    id UInt64,
-    company_id UInt64,
-    partner_id UInt64,
-    name String,
-    date_order DateTime,
-    date_planned DateTime,
-    state String,
-    write_date DateTime,
-    create_date DateTime
-) ENGINE = ReplacingMergeTree(write_date)
-PARTITION BY toYYYYMM(date_order)
-ORDER BY (company_id, partner_id, id);
-
-CREATE TABLE IF NOT EXISTS raw_product_product (
-    id UInt64,
-    company_id UInt64,
-    product_tmpl_id UInt64,
-    default_code String,
-    active UInt8,
-    write_date DateTime,
-    create_date DateTime
-) ENGINE = ReplacingMergeTree(write_date)
-ORDER BY (company_id, product_tmpl_id, id);
-
-CREATE TABLE IF NOT EXISTS raw_product_template (
-    id UInt64,
-    company_id UInt64,
-    name String,
-    standard_price Float64,
-    list_price Float64,
-    type String,
-    write_date DateTime,
-    create_date DateTime
-) ENGINE = ReplacingMergeTree(write_date)
-ORDER BY (company_id, id);
-
-CREATE TABLE IF NOT EXISTS raw_stock_valuation_layer (
-    id UInt64,
-    company_id UInt64,
-    product_id UInt64,
-    quantity Float64,
-    value Float64,
-    stock_move_id UInt64,
-    create_date DateTime,
-    write_date DateTime
-) ENGINE = ReplacingMergeTree(write_date)
-PARTITION BY toYYYYMM(create_date)
-ORDER BY (company_id, product_id, id);
-
-CREATE TABLE IF NOT EXISTS raw_stock_location (
-    id UInt64,
-    company_id UInt64,
-    name String,
-    usage String,
-    write_date DateTime,
-    create_date DateTime
-) ENGINE = ReplacingMergeTree(write_date)
-ORDER BY (company_id, id);
-
-CREATE TABLE IF NOT EXISTS raw_res_partner (
-    id UInt64,
-    company_id UInt64,
-    name String,
-    supplier_rank UInt64,
-    write_date DateTime,
-    create_date DateTime
-) ENGINE = ReplacingMergeTree(write_date)
-ORDER BY (company_id, id);
-"""
-
-MART_TABLE_DDL = """
--- 1. Liquidation Candidates: Identifies 'dead stock'—products with no movement for a configurable period (e.g., 90 days).
--- Insight: Helps finance and ops teams decide what to liquidate to free up cash flow and warehouse space.
-CREATE TABLE IF NOT EXISTS mart_liquidation_candidates (
-    snapshot_date Date,
-    company_id UInt64,
-    product_id UInt64,
-    last_movement_date Date,
-    days_since_last_move UInt32,
-    on_hand_qty Float64,
-    standard_price Float64,
-    value_at_risk Float64
-) ENGINE = MergeTree
-PARTITION BY toYYYYMM(snapshot_date)
-ORDER BY (company_id, product_id, snapshot_date);
-
--- 2. Vendor Scorecard (OTIF): Tracks On-Time and In-Full performance for vendors.
--- Insight: Used for vendor negotiations and identifying supply chain risks.
-CREATE TABLE IF NOT EXISTS mart_vendor_rating (
-    month Date,
-    company_id UInt64,
-    partner_id UInt64,
-    on_time_pct Float64,
-    in_full_pct Float64,
-    overall_score Float64
-) ENGINE = MergeTree
-PARTITION BY toYYYYMM(month)
-ORDER BY (company_id, partner_id, month);
-
--- 3. Warehouse Efficiency (Touch Ratio): Measures how many times an item is moved internally vs. shipped out.
--- Insight: High ratios indicate inefficient warehouse layout or excessive handling processes.
-CREATE TABLE IF NOT EXISTS mart_warehouse_touch_ratio (
-    month Date,
-    company_id UInt64,
-    product_id UInt64,
-    internal_moves UInt64,
-    outgoing_moves UInt64,
-    touch_ratio Float64
-) ENGINE = MergeTree
-PARTITION BY toYYYYMM(month)
-ORDER BY (company_id, product_id, month);
-
--- 3b. Stockout Risk: Tracks unfulfilled demand by product.
-CREATE TABLE IF NOT EXISTS mart_stockout_risk (
-    month Date,
-    company_id UInt64,
-    product_id UInt64,
-    demand_qty Float64,
-    fulfilled_qty Float64,
-    unmet_qty Float64,
-    move_count UInt64,
-    stockout_moves UInt64,
-    stockout_rate Float64
-) ENGINE = MergeTree
-PARTITION BY toYYYYMM(month)
-ORDER BY (company_id, product_id, month);
-
--- 3c. Inventory Turnover: Outbound value moved relative to on-hand value.
-CREATE TABLE IF NOT EXISTS mart_inventory_turnover (
-    month Date,
-    company_id UInt64,
-    product_id UInt64,
-    moved_qty Float64,
-    moved_value Float64,
-    on_hand_qty Float64,
-    on_hand_value Float64,
-    turnover_ratio Float64
-) ENGINE = MergeTree
-PARTITION BY toYYYYMM(month)
-ORDER BY (company_id, product_id, month);
-
--- 4. Cost Anomalies: Detects sudden spikes or drops in unit cost compared to a 30-day average.
--- Insight: Flags potential data entry errors or supplier pricing issues for immediate review.
-CREATE TABLE IF NOT EXISTS mart_cost_anomalies (
-    snapshot_date Date,
-    company_id UInt64,
-    product_id UInt64,
-    unit_cost Float64,
-    avg_30d_cost Float64,
-    deviation_pct Float64
-) ENGINE = MergeTree
-PARTITION BY toYYYYMM(snapshot_date)
-ORDER BY (company_id, product_id, snapshot_date);
-
--- 5. ABC Classification: Segments inventory by value usage (Pareto Principle: 80% value from 20% items).
--- Insight: Prioritizes cycle counting and forecasting efforts on Class A items.
-CREATE TABLE IF NOT EXISTS mart_abc_classification (
-    snapshot_date Date,
-    company_id UInt64,
-    product_id UInt64,
-    total_value_moved Float64,
-    cumulative_share Float64,
-    abc_class String
-) ENGINE = MergeTree
-PARTITION BY toYYYYMM(snapshot_date)
-ORDER BY (company_id, product_id, snapshot_date);
-
--- 6. Demand Forecast: Predicts future quantity requirements based on historical trends (Exponential Smoothing).
--- Insight: Supports purchasing decisions to prevent stockouts on high-value items.
-CREATE TABLE IF NOT EXISTS mart_demand_forecast (
-    forecast_month Date,
-    company_id UInt64,
-    product_id UInt64,
-    forecast_qty Float64,
-    lower_ci Float64,
-    upper_ci Float64
-) ENGINE = MergeTree
-PARTITION BY toYYYYMM(forecast_month)
-ORDER BY (company_id, product_id, forecast_month);
-"""
-
-MART_SQL_LIQUIDATION = """
-INSERT INTO mart_liquidation_candidates
-SELECT
-    toDate(now()) AS snapshot_date,
-    lm.company_id,
-    lm.product_id,
-    lm.last_movement_date,
-    dateDiff('day', lm.last_movement_date, toDate(now())) AS days_since_last_move,
-    q.on_hand_qty,
-    pt.standard_price,
-    q.on_hand_qty * pt.standard_price AS value_at_risk
-FROM (
-    SELECT company_id, product_id, max(toDate(date_done)) AS last_movement_date
-    FROM raw_stock_move_line
-    WHERE state = 'done'
-    GROUP BY company_id, product_id
-) lm
-LEFT JOIN (
-    SELECT company_id, product_id, sum(quantity) AS on_hand_qty
-    FROM raw_stock_quant
-    LEFT JOIN raw_stock_location l
-        ON raw_stock_quant.location_id = l.id
-        AND (l.company_id = raw_stock_quant.company_id OR l.company_id = 0)
-    WHERE l.usage = 'internal'
-    GROUP BY company_id, product_id
-) q ON lm.company_id = q.company_id AND lm.product_id = q.product_id
-LEFT JOIN raw_product_product pp ON lm.product_id = pp.id
-LEFT JOIN raw_product_template pt ON pp.product_tmpl_id = pt.id
-HAVING days_since_last_move > %(dead_stock_days)s;
-"""
-
-MART_SQL_VENDOR = """
--- On-time/in-full is limited to incoming receipts based on supplier -> internal locations.
-INSERT INTO mart_vendor_rating
-SELECT
-    toStartOfMonth(m.date_done) AS month,
-    m.company_id,
-    po.partner_id,
-    avg(if(m.date_done <= po.date_planned, 1.0, 0.0)) AS on_time_pct,
-    avg(if(m.quantity_done >= m.product_uom_qty, 1.0, 0.0)) AS in_full_pct,
-    (avg(if(m.date_done <= po.date_planned, 1.0, 0.0)) * 0.5)
-      + (avg(if(m.quantity_done >= m.product_uom_qty, 1.0, 0.0)) * 0.5) AS overall_score
-FROM raw_stock_move m
-LEFT JOIN raw_purchase_order po ON m.origin = po.name AND m.company_id = po.company_id
-LEFT JOIN raw_stock_location src ON m.location_id = src.id AND m.company_id = src.company_id
-LEFT JOIN raw_stock_location dst ON m.location_dest_id = dst.id AND m.company_id = dst.company_id
-WHERE m.state = 'done'
-  AND m.date_done IS NOT NULL
-  AND src.usage = 'supplier'
-  AND dst.usage = 'internal'
-GROUP BY month, m.company_id, po.partner_id;
-"""
-
-MART_SQL_TOUCH_RATIO = """
-INSERT INTO mart_warehouse_touch_ratio
-SELECT
-    toStartOfMonth(m.date_done) AS month,
-    m.company_id,
-    m.product_id,
-    countIf(src.usage = 'internal' AND dst.usage = 'internal') AS internal_moves,
-    countIf(dst.usage = 'customer') AS outgoing_moves,
-    if(outgoing_moves = 0, 0.0, internal_moves / outgoing_moves) AS touch_ratio
-FROM raw_stock_move m
-LEFT JOIN raw_stock_location src
-    ON m.location_id = src.id AND (src.company_id = m.company_id OR src.company_id = 0)
-LEFT JOIN raw_stock_location dst
-    ON m.location_dest_id = dst.id AND (dst.company_id = m.company_id OR dst.company_id = 0)
-WHERE m.state = 'done'
-GROUP BY month, m.company_id, m.product_id;
-"""
-
-MART_SQL_STOCKOUT_RISK = """
-INSERT INTO mart_stockout_risk
-SELECT
-    toStartOfMonth(m.date_done) AS month,
-    m.company_id,
-    m.product_id,
-    sum(m.product_uom_qty) AS demand_qty,
-    sum(m.quantity_done) AS fulfilled_qty,
-    sumIf(m.product_uom_qty - m.quantity_done, m.quantity_done < m.product_uom_qty) AS unmet_qty,
-    count() AS move_count,
-    countIf(m.quantity_done < m.product_uom_qty) AS stockout_moves,
-    if(move_count = 0, 0.0, stockout_moves / move_count) AS stockout_rate
-FROM raw_stock_move m
-LEFT JOIN raw_stock_location src
-    ON m.location_id = src.id AND (src.company_id = m.company_id OR src.company_id = 0)
-LEFT JOIN raw_stock_location dst
-    ON m.location_dest_id = dst.id AND (dst.company_id = m.company_id OR dst.company_id = 0)
-WHERE m.state = 'done'
-  AND m.date_done IS NOT NULL
-  AND src.usage = 'internal'
-  AND dst.usage = 'customer'
-GROUP BY month, m.company_id, m.product_id;
-"""
-
-MART_SQL_INVENTORY_TURNOVER = """
-INSERT INTO mart_inventory_turnover
-WITH on_hand AS (
-    SELECT
-        company_id,
-        product_id,
-        sum(quantity) AS on_hand_qty
-    FROM raw_stock_quant
-    LEFT JOIN raw_stock_location l
-        ON raw_stock_quant.location_id = l.id
-        AND (l.company_id = raw_stock_quant.company_id OR l.company_id = 0)
-    WHERE l.usage = 'internal'
-    GROUP BY company_id, product_id
+from etl.clickhouse import execute_sql, get_clickhouse_client, insert_rows
+from etl.config import get_odoo_config
+from etl.constants import (
+    BATCH_SIZE,
+    CLICKHOUSE_CONN_ID,
+    DAG_ID,
+    DEFAULT_ARGS,
+    EMAIL_CONN_ID,
+    MODEL_FIELD_ALIASES,
+    ODOO_CONN_ID,
+    RAW_TABLES,
+    VAR_ABC_A_PCT,
+    VAR_ABC_B_PCT,
+    VAR_ABC_C_PCT,
+    VAR_ANOMALY_PCT,
+    VAR_DEAD_STOCK_DAYS,
+    VAR_FORECAST_SCOPE,
+    VAR_FULL_REFRESH_MODELS,
+    VAR_HELPDESK_TEAM_ID,
+    VAR_OTIF_THRESHOLD,
+    VAR_PROCUREMENT_EMAIL,
 )
-SELECT
-    toStartOfMonth(m.date_done) AS month,
-    m.company_id,
-    m.product_id,
-    sum(m.quantity_done) AS moved_qty,
-    sum(m.quantity_done * pt.standard_price) AS moved_value,
-    coalesce(on_hand.on_hand_qty, 0) AS on_hand_qty,
-    coalesce(on_hand.on_hand_qty, 0) * pt.standard_price AS on_hand_value,
-    if(on_hand_value = 0, 0.0, moved_value / on_hand_value) AS turnover_ratio
-FROM raw_stock_move m
-LEFT JOIN raw_stock_location src
-    ON m.location_id = src.id AND (src.company_id = m.company_id OR src.company_id = 0)
-LEFT JOIN raw_stock_location dst
-    ON m.location_dest_id = dst.id AND (dst.company_id = m.company_id OR dst.company_id = 0)
-LEFT JOIN raw_product_product pp
-    ON m.product_id = pp.id AND (pp.company_id = m.company_id OR pp.company_id = 0)
-LEFT JOIN raw_product_template pt
-    ON pp.product_tmpl_id = pt.id AND (pt.company_id = m.company_id OR pt.company_id = 0)
-LEFT JOIN on_hand
-    ON on_hand.company_id = m.company_id AND on_hand.product_id = m.product_id
-WHERE m.state = 'done'
-  AND m.date_done IS NOT NULL
-  AND src.usage = 'internal'
-  AND dst.usage = 'customer'
-GROUP BY month, m.company_id, m.product_id, on_hand_qty, pt.standard_price;
-"""
-
-MART_SQL_COST_ANOMALIES = """
-INSERT INTO mart_cost_anomalies
-SELECT
-    toDate(now()) AS snapshot_date,
-    company_id,
-    product_id,
-    today_cost AS unit_cost,
-    avg_30d_cost,
-    if(avg_30d_cost = 0, 0.0, (today_cost - avg_30d_cost) / avg_30d_cost) AS deviation_pct
-FROM (
-    SELECT
-        company_id,
-        product_id,
-        avgIf(value / quantity, quantity > 0 AND toDate(create_date) = toDate(now())) AS today_cost,
-        avgIf(value / quantity, quantity > 0 AND create_date >= now() - INTERVAL 30 DAY) AS avg_30d_cost
-    FROM raw_stock_valuation_layer
-    GROUP BY company_id, product_id
+from etl.extract import fetch_standard_prices_for_templates, normalize_value, watermark_key
+from etl.odoo_client import OdooClient
+from etl.sql import (
+    MART_SQL_ABC,
+    MART_SQL_COST_ANOMALIES,
+    MART_SQL_INVENTORY_TURNOVER,
+    MART_SQL_LIQUIDATION,
+    MART_SQL_STOCKOUT_RISK,
+    MART_SQL_TOUCH_RATIO,
+    MART_SQL_VENDOR,
+    MART_TABLE_DDL,
+    RAW_TABLE_DDL,
 )
-WHERE abs(deviation_pct) > %(anomaly_pct)s;
-"""
-
-MART_SQL_ABC = """
-INSERT INTO mart_abc_classification
-SELECT
-    -- Logic: Rank products by total movement value (Cost * Qty) over the last 12 months.
-    -- This implements the Pareto Principle (80/20 rule) based on inventory throughput, not sales revenue.
-    toDate(now()) AS snapshot_date,
-    company_id,
-    product_id,
-    total_value_moved,
-    cumulative_share,
-    multiIf(
-        cumulative_share <= %(abc_a_pct)s, 'A',
-        cumulative_share <= (%(abc_a_pct)s + %(abc_b_pct)s), 'B',
-        'C'
-    ) AS abc_class
-FROM (
-    SELECT
-        company_id,
-        product_id,
-        total_value_moved,
-        sum(total_value_moved) OVER (
-            PARTITION BY company_id
-            ORDER BY total_value_moved DESC
-            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-        ) / sum(total_value_moved) OVER (PARTITION BY company_id) AS cumulative_share
-    FROM (
-        SELECT
-            m.company_id AS company_id,
-            m.product_id AS product_id,
-            sum(m.quantity_done * pt.standard_price) AS total_value_moved
-        FROM raw_stock_move m
-        LEFT JOIN raw_product_product pp ON m.product_id = pp.id
-        LEFT JOIN raw_product_template pt ON pp.product_tmpl_id = pt.id
-        WHERE m.state = 'done'
-          AND m.date_done >= now() - INTERVAL 12 MONTH
-        GROUP BY m.company_id, m.product_id
-    )
-);
-"""
 
 # Demand forecasting uses Python for flexibility; results inserted into mart_demand_forecast.
 
 # -------------------- DAG --------------------
-
-
-def _get_odoo_config() -> OdooConfig:
-    conn = BaseHook.get_connection(ODOO_CONN_ID)
-    extras = conn.extra_dejson
-    protocol = extras.get("protocol", "jsonrpc")
-    api_path = extras.get("api_path", "/jsonrpc")
-    if protocol != "jsonrpc":
-        logging.warning("Protocol %s requested but JSON-RPC is enforced by design", protocol)
-    host = conn.host or ""
-    scheme = extras.get("scheme", "https")
-    if not host.startswith("http"):
-        host = f"{scheme}://{host}"
-    port = extras.get("port") or conn.port
-    parsed = urlparse(host)
-    netloc = parsed.netloc
-    if port and ":" not in netloc:
-        netloc = f"{netloc}:{port}"
-        host = urlunparse((parsed.scheme, netloc, parsed.path, parsed.params, parsed.query, parsed.fragment))
-    return OdooConfig(
-        url=host,
-        db=extras.get("db"),
-        username=conn.login,
-        password=conn.password,
-        api_path=api_path,
-    )
-
-
-def _watermark_key(model: str) -> str:
-    return f"odoo_watermark__{model}"
-
-
-def _normalize_value(field: str, value: Any) -> Any:
-    """Normalize Odoo search_read values into ClickHouse-friendly scalars."""
-    if isinstance(value, (list, tuple)) and value:
-        value = value[0]
-    if field in STRING_FIELDS:
-        if value is None or value is False:
-            return ""
-        if not isinstance(value, str):
-            return str(value)
-    if isinstance(value, bool):
-        return int(value)
-    if value is None:
-        if field.endswith("_id") or field in {"company_id"}:
-            return 0
-        if field in {"quantity", "qty_done", "product_uom_qty", "quantity_done", "value", "standard_price", "list_price"}:
-            return 0.0
-        return None
-    if field.endswith("_date") or field in {
-        "date",
-        "date_done",
-        "date_deadline",
-        "write_date",
-        "create_date",
-        "date_expected",
-        "date_order",
-        "date_planned",
-    }:
-        if isinstance(value, str):
-            try:
-                return datetime.fromisoformat(value)
-            except ValueError:
-                try:
-                    return datetime.combine(dt_date.fromisoformat(value), datetime.min.time())
-                except ValueError:
-                    return value
-        return value
-    return value
 
 
 with DAG(
@@ -933,14 +82,14 @@ with DAG(
 
     @task
     def init_clickhouse_tables() -> None:
-        client = get_clickhouse_client()
+        client = get_clickhouse_client(CLICKHOUSE_CONN_ID)
         execute_sql(client, RAW_TABLE_DDL)
         execute_sql(client, MART_TABLE_DDL)
 
     @task
     def fetch_active_companies() -> List[int]:
         """Fetch list of all active company IDs from Odoo, minus excluded ones."""
-        config = _get_odoo_config()
+        config = get_odoo_config(ODOO_CONN_ID)
         client = OdooClient(config)
         companies = client.search_read("res.company", [], ["id"], limit=100, offset=0)
         excluded_raw = Variable.get("excluded_company_ids", default_var="[]")
@@ -963,7 +112,7 @@ with DAG(
 
         Uses write_date watermark for idempotent loads and stores it only after load succeeds.
         """
-        config = _get_odoo_config()
+        config = get_odoo_config(ODOO_CONN_ID)
 
         # If running per-company, force the Odoo context to that specific company.
         if company_id:
@@ -971,11 +120,11 @@ with DAG(
             config.allowed_company_ids = [company_id]
 
         client = OdooClient(config)
-        ch_client = get_clickhouse_client()
+        ch_client = get_clickhouse_client(CLICKHOUSE_CONN_ID)
 
-        watermark_key = _watermark_key(model)
+        watermark_key_name = watermark_key(model)
         if company_id:
-            watermark_key = f"{watermark_key}_{company_id}"
+            watermark_key_name = f"{watermark_key_name}_{company_id}"
         full_refresh_raw = Variable.get(VAR_FULL_REFRESH_MODELS, default_var="[]")
         try:
             full_refresh_models = {m for m in json.loads(full_refresh_raw) if isinstance(m, str)}
@@ -986,7 +135,7 @@ with DAG(
             last_watermark = "1970-01-01 00:00:00"
             incremental_domain = list(domain)
         else:
-            last_watermark = Variable.get(watermark_key, default_var="1970-01-01 00:00:00")
+            last_watermark = Variable.get(watermark_key_name, default_var="1970-01-01 00:00:00")
             incremental_domain = list(domain)
             incremental_domain.append(["write_date", ">", last_watermark])
 
@@ -1009,7 +158,7 @@ with DAG(
             standard_price_overrides: Dict[int, float] = {}
             if model == "product.template":
                 template_ids = [rec.get("id") for rec in batch if rec.get("id")]
-                standard_price_overrides = _fetch_standard_prices_for_templates(
+                standard_price_overrides = fetch_standard_prices_for_templates(
                     client,
                     company_id,
                     template_ids,
@@ -1027,7 +176,7 @@ with DAG(
                     rec["company_id"] = company_id
 
                 # Basic data-quality guardrails to avoid null keys and dates in raw tables.
-                normalized = {field: _normalize_value(field, rec.get(field)) for field in fields}
+                normalized = {field: normalize_value(field, rec.get(field)) for field in fields}
                 for source_field, target_field in aliases.items():
                     if source_field in normalized:
                         normalized[target_field] = normalized.pop(source_field)
@@ -1049,7 +198,7 @@ with DAG(
             total_inserted += inserted
 
         if total_inserted > 0 and model not in full_refresh_models:
-            Variable.set(watermark_key, max_write_date)
+            Variable.set(watermark_key_name, max_write_date)
 
         logging.info(
             "Model %s (company %s) inserted %s rows, invalid %s rows, watermark %s",
@@ -1064,7 +213,7 @@ with DAG(
 
     @task
     def run_mart_sql(sql: str, sql_params: Dict[str, Any]) -> None:
-        client = get_clickhouse_client()
+        client = get_clickhouse_client(CLICKHOUSE_CONN_ID)
         logging.info("Running mart SQL with params %s" % sql_params)
         execute_sql(client, sql, sql_params)
 
@@ -1092,7 +241,7 @@ with DAG(
         if not email:
             logging.info("No procurement email configured; skipping OTIF alert")
             return False
-        client = get_clickhouse_client()
+        client = get_clickhouse_client(CLICKHOUSE_CONN_ID)
         rows = client.execute(
             """
             SELECT min(overall_score)
@@ -1110,9 +259,15 @@ with DAG(
 
         Uses statsmodels if available; falls back to a moving-average baseline otherwise.
         """
-        from collections import defaultdict
 
-        client = get_clickhouse_client()
+        client = get_clickhouse_client(CLICKHOUSE_CONN_ID)
+        company_rows = client.execute("SELECT id, name FROM raw_res_company")
+        company_names = {row[0]: row[1] for row in company_rows}
+        product_rows = client.execute(
+            "SELECT company_id, id, default_code FROM raw_product_product"
+        )
+        product_codes = {(row[0], row[1]): row[2] for row in product_rows}
+
         scope = Variable.get(VAR_FORECAST_SCOPE, default_var="only_class_a")
         query = """
         SELECT
@@ -1184,11 +339,17 @@ with DAG(
                     forecast_qty = float(fit.forecast(1)[0])
             except Exception as exc:
                 logging.info("Statsmodels unavailable or failed (%s); using moving average", exc)
+            company_name = company_names.get(company_id, "")
+            product_default_code = product_codes.get((company_id, product_id), "")
+            if not product_default_code:
+                product_default_code = product_codes.get((0, product_id), "")
             forecast_rows.append(
                 {
                     "forecast_month": forecast_month,
                     "company_id": company_id,
+                    "company_name": company_name,
                     "product_id": product_id,
+                    "product_default_code": product_default_code,
                     "forecast_qty": float(forecast_qty),
                     "lower_ci": float(forecast_qty * 0.85),
                     "upper_ci": float(forecast_qty * 1.15),
@@ -1205,9 +366,9 @@ with DAG(
 
         If your Odoo model differs (helpdesk.ticket or mail.message), adjust here.
         """
-        config = _get_odoo_config()
+        config = get_odoo_config(ODOO_CONN_ID)
         client = OdooClient(config)
-        ch_client = get_clickhouse_client()
+        ch_client = get_clickhouse_client(CLICKHOUSE_CONN_ID)
         team_id = Variable.get(VAR_HELPDESK_TEAM_ID, default_var=None)
         if not team_id:
             logging.info("No helpdesk team configured; skipping ticket creation")
@@ -1253,9 +414,9 @@ with DAG(
     @task
     def reverse_etl_abc_classification() -> int:
         """Update Odoo product.template with ABC classification in batches."""
-        config = _get_odoo_config()
+        config = get_odoo_config(ODOO_CONN_ID)
         client = OdooClient(config)
-        ch_client = get_clickhouse_client()
+        ch_client = get_clickhouse_client(CLICKHOUSE_CONN_ID)
 
         rows = ch_client.execute(
             """
@@ -1423,6 +584,19 @@ with DAG(
             required_fields=["id", "name", "write_date"],
         ).expand(company_id=companies)
 
+        extract_res_company = extract_model_to_clickhouse(
+            model="res.company",
+            fields=[
+                "id",
+                "name",
+                "write_date",
+                "create_date",
+            ],
+            domain=[],
+            order="write_date asc",
+            required_fields=["id", "name", "write_date"],
+        )
+
         extract_res_partner = extract_model_to_clickhouse.partial(
             model="res.partner",
             fields=[
@@ -1447,6 +621,7 @@ with DAG(
             extract_product_template,
             extract_stock_valuation_layer,
             extract_stock_location,
+            extract_res_company,
             extract_res_partner,
         ]
 
