@@ -271,31 +271,38 @@ SELECT
     lm.company_id,
     coalesce(rc.name, '') AS company_name,
     lm.product_id,
-    coalesce(pp.default_code, '') AS product_default_code,
+    coalesce(pp.default_code, pp_any.default_code, '') AS product_default_code,
     lm.last_movement_date,
     dateDiff('day', lm.last_movement_date, toDate(now())) AS days_since_last_move,
     q.on_hand_qty,
-    pt.standard_price,
-    q.on_hand_qty * pt.standard_price AS value_at_risk
+    coalesce(pt.standard_price, pt_any.standard_price, 0.0) AS standard_price,
+    q.on_hand_qty * coalesce(pt.standard_price, pt_any.standard_price, 0.0) AS value_at_risk
 FROM (
     SELECT company_id, product_id, max(toDate(date_done)) AS last_movement_date
     FROM raw_stock_move_line
     WHERE state = 'done'
+      AND company_id NOT IN %(excluded_company_ids)s
     GROUP BY company_id, product_id
 ) lm
 LEFT JOIN (
-    SELECT company_id, product_id, sum(quantity) AS on_hand_qty
-    FROM raw_stock_quant
+    SELECT rq.company_id, rq.product_id, sum(rq.quantity) AS on_hand_qty
+    FROM raw_stock_quant rq
     LEFT JOIN raw_stock_location l
-        ON raw_stock_quant.location_id = l.id
-        AND (l.company_id = raw_stock_quant.company_id OR l.company_id = 0)
+        ON rq.location_id = l.id
+        AND (l.company_id = rq.company_id OR l.company_id = 0)
     WHERE l.usage = 'internal'
-    GROUP BY company_id, product_id
+      AND rq.company_id NOT IN %(excluded_company_ids)s
+    GROUP BY rq.company_id, rq.product_id
 ) q ON lm.company_id = q.company_id AND lm.product_id = q.product_id
 LEFT JOIN raw_product_product pp
     ON lm.product_id = pp.id AND (pp.company_id = lm.company_id OR pp.company_id = 0)
+LEFT JOIN raw_product_product pp_any
+    ON lm.product_id = pp_any.id
 LEFT JOIN raw_product_template pt
-    ON pp.product_tmpl_id = pt.id AND (pt.company_id = lm.company_id OR pt.company_id = 0)
+    ON coalesce(pp.product_tmpl_id, pp_any.product_tmpl_id) = pt.id
+    AND (pt.company_id = lm.company_id OR pt.company_id = 0)
+LEFT JOIN raw_product_template pt_any
+    ON coalesce(pp.product_tmpl_id, pp_any.product_tmpl_id) = pt_any.id
 LEFT JOIN raw_res_company rc ON lm.company_id = rc.id
 HAVING days_since_last_move > %(dead_stock_days)s;
 """
@@ -329,6 +336,7 @@ WHERE m.state = 'done'
   AND m.date_done IS NOT NULL
   AND src.usage = 'supplier'
   AND dst.usage = 'internal'
+  AND m.company_id NOT IN %(excluded_company_ids)s
 GROUP BY month, m.company_id, company_name, po.partner_id;
 """
 
@@ -348,7 +356,7 @@ SELECT
     m.company_id,
     coalesce(rc.name, '') AS company_name,
     m.product_id,
-    coalesce(pp.default_code, '') AS product_default_code,
+    coalesce(pp.default_code, pp_any.default_code, '') AS product_default_code,
     countIf(src.usage = 'internal' AND dst.usage = 'internal') AS internal_moves,
     countIf(dst.usage = 'customer') AS outgoing_moves,
     if(outgoing_moves = 0, 0.0, internal_moves / outgoing_moves) AS touch_ratio
@@ -359,8 +367,11 @@ LEFT JOIN raw_stock_location dst
     ON m.location_dest_id = dst.id AND (dst.company_id = m.company_id OR dst.company_id = 0)
 LEFT JOIN raw_product_product pp
     ON m.product_id = pp.id AND (pp.company_id = m.company_id OR pp.company_id = 0)
+LEFT JOIN raw_product_product pp_any
+    ON m.product_id = pp_any.id
 LEFT JOIN raw_res_company rc ON m.company_id = rc.id
 WHERE m.state = 'done'
+  AND m.company_id NOT IN %(excluded_company_ids)s
 GROUP BY month, m.company_id, company_name, m.product_id, product_default_code;
 """
 
@@ -383,7 +394,7 @@ SELECT
     m.company_id,
     coalesce(rc.name, '') AS company_name,
     m.product_id,
-    coalesce(pp.default_code, '') AS product_default_code,
+    coalesce(pp.default_code, pp_any.default_code, '') AS product_default_code,
     sum(m.product_uom_qty) AS demand_qty,
     sum(m.quantity_done) AS fulfilled_qty,
     sumIf(m.product_uom_qty - m.quantity_done, m.quantity_done < m.product_uom_qty) AS unmet_qty,
@@ -397,11 +408,14 @@ LEFT JOIN raw_stock_location dst
     ON m.location_dest_id = dst.id AND (dst.company_id = m.company_id OR dst.company_id = 0)
 LEFT JOIN raw_product_product pp
     ON m.product_id = pp.id AND (pp.company_id = m.company_id OR pp.company_id = 0)
+LEFT JOIN raw_product_product pp_any
+    ON m.product_id = pp_any.id
 LEFT JOIN raw_res_company rc ON m.company_id = rc.id
 WHERE m.state = 'done'
   AND m.date_done IS NOT NULL
   AND src.usage = 'internal'
   AND dst.usage = 'customer'
+  AND m.company_id NOT IN %(excluded_company_ids)s
 GROUP BY month, m.company_id, company_name, m.product_id, product_default_code;
 """
 
@@ -423,23 +437,24 @@ WITH on_hand AS (
         company_id,
         product_id,
         sum(quantity) AS on_hand_qty
-    FROM raw_stock_quant
+    FROM raw_stock_quant rq
     LEFT JOIN raw_stock_location l
-        ON raw_stock_quant.location_id = l.id
-        AND (l.company_id = raw_stock_quant.company_id OR l.company_id = 0)
+        ON rq.location_id = l.id
+        AND (l.company_id = rq.company_id OR l.company_id = 0)
     WHERE l.usage = 'internal'
-    GROUP BY company_id, product_id
+      AND rq.company_id NOT IN %(excluded_company_ids)s
+    GROUP BY rq.company_id, rq.product_id
 )
 SELECT
     toStartOfMonth(m.date_done) AS month,
     m.company_id,
     coalesce(rc.name, '') AS company_name,
     m.product_id,
-    coalesce(pp.default_code, '') AS product_default_code,
+    coalesce(pp.default_code, pp_any.default_code, '') AS product_default_code,
     sum(m.quantity_done) AS moved_qty,
-    sum(m.quantity_done * pt.standard_price) AS moved_value,
+    sum(m.quantity_done * coalesce(pt.standard_price, pt_any.standard_price, 0.0)) AS moved_value,
     coalesce(on_hand.on_hand_qty, 0) AS on_hand_qty,
-    coalesce(on_hand.on_hand_qty, 0) * pt.standard_price AS on_hand_value,
+    coalesce(on_hand.on_hand_qty, 0) * coalesce(pt.standard_price, pt_any.standard_price, 0.0) AS on_hand_value,
     if(on_hand_value = 0, 0.0, moved_value / on_hand_value) AS turnover_ratio
 FROM raw_stock_move m
 LEFT JOIN raw_stock_location src
@@ -448,8 +463,13 @@ LEFT JOIN raw_stock_location dst
     ON m.location_dest_id = dst.id AND (dst.company_id = m.company_id OR dst.company_id = 0)
 LEFT JOIN raw_product_product pp
     ON m.product_id = pp.id AND (pp.company_id = m.company_id OR pp.company_id = 0)
+LEFT JOIN raw_product_product pp_any
+    ON m.product_id = pp_any.id
 LEFT JOIN raw_product_template pt
-    ON pp.product_tmpl_id = pt.id AND (pt.company_id = m.company_id OR pt.company_id = 0)
+    ON coalesce(pp.product_tmpl_id, pp_any.product_tmpl_id) = pt.id
+    AND (pt.company_id = m.company_id OR pt.company_id = 0)
+LEFT JOIN raw_product_template pt_any
+    ON coalesce(pp.product_tmpl_id, pp_any.product_tmpl_id) = pt_any.id
 LEFT JOIN on_hand
     ON on_hand.company_id = m.company_id AND on_hand.product_id = m.product_id
 LEFT JOIN raw_res_company rc ON m.company_id = rc.id
@@ -457,7 +477,8 @@ WHERE m.state = 'done'
   AND m.date_done IS NOT NULL
   AND src.usage = 'internal'
   AND dst.usage = 'customer'
-GROUP BY month, m.company_id, company_name, m.product_id, product_default_code, on_hand_qty, pt.standard_price;
+  AND m.company_id NOT IN %(excluded_company_ids)s
+GROUP BY month, m.company_id, company_name, m.product_id, product_default_code, on_hand_qty, pt.standard_price, pt_any.standard_price;
 """
 
 MART_SQL_COST_ANOMALIES = """
@@ -476,7 +497,7 @@ SELECT
     t.company_id,
     coalesce(rc.name, '') AS company_name,
     t.product_id,
-    coalesce(pp.default_code, '') AS product_default_code,
+    coalesce(pp.default_code, pp_any.default_code, '') AS product_default_code,
     t.today_cost AS unit_cost,
     t.avg_30d_cost,
     if(t.avg_30d_cost = 0, 0.0, (t.today_cost - t.avg_30d_cost) / t.avg_30d_cost) AS deviation_pct
@@ -487,10 +508,13 @@ FROM (
         avgIf(value / quantity, quantity > 0 AND toDate(create_date) = toDate(now())) AS today_cost,
         avgIf(value / quantity, quantity > 0 AND create_date >= now() - INTERVAL 30 DAY) AS avg_30d_cost
     FROM raw_stock_valuation_layer
+    WHERE company_id NOT IN %(excluded_company_ids)s
     GROUP BY company_id, product_id
 ) t
 LEFT JOIN raw_product_product pp
     ON t.product_id = pp.id AND (pp.company_id = t.company_id OR pp.company_id = 0)
+LEFT JOIN raw_product_product pp_any
+    ON t.product_id = pp_any.id
 LEFT JOIN raw_res_company rc ON t.company_id = rc.id
 WHERE abs(deviation_pct) > %(anomaly_pct)s;
 """
@@ -513,7 +537,7 @@ SELECT
     t.company_id,
     coalesce(rc.name, '') AS company_name,
     t.product_id,
-    coalesce(pp.default_code, '') AS product_default_code,
+    coalesce(pp.default_code, pp_any.default_code, '') AS product_default_code,
     total_value_moved,
     cumulative_share,
     multiIf(
@@ -535,18 +559,26 @@ FROM (
         SELECT
             m.company_id AS company_id,
             m.product_id AS product_id,
-            sum(m.quantity_done * pt.standard_price) AS total_value_moved
+            sum(m.quantity_done * coalesce(pt.standard_price, pt_any.standard_price, 0.0)) AS total_value_moved
         FROM raw_stock_move m
         LEFT JOIN raw_product_product pp
             ON m.product_id = pp.id AND (pp.company_id = m.company_id OR pp.company_id = 0)
+        LEFT JOIN raw_product_product pp_any
+            ON m.product_id = pp_any.id
         LEFT JOIN raw_product_template pt
-            ON pp.product_tmpl_id = pt.id AND (pt.company_id = m.company_id OR pt.company_id = 0)
+            ON coalesce(pp.product_tmpl_id, pp_any.product_tmpl_id) = pt.id
+            AND (pt.company_id = m.company_id OR pt.company_id = 0)
+        LEFT JOIN raw_product_template pt_any
+            ON coalesce(pp.product_tmpl_id, pp_any.product_tmpl_id) = pt_any.id
         WHERE m.state = 'done'
           AND m.date_done >= now() - INTERVAL 12 MONTH
+          AND m.company_id NOT IN %(excluded_company_ids)s
         GROUP BY m.company_id, m.product_id
     )
 ) t
 LEFT JOIN raw_product_product pp
     ON t.product_id = pp.id AND (pp.company_id = t.company_id OR pp.company_id = 0)
+LEFT JOIN raw_product_product pp_any
+    ON t.product_id = pp_any.id
 LEFT JOIN raw_res_company rc ON t.company_id = rc.id;
 """

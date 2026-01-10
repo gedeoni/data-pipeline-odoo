@@ -214,8 +214,17 @@ with DAG(
     @task
     def run_mart_sql(sql: str, sql_params: Dict[str, Any]) -> None:
         client = get_clickhouse_client(CLICKHOUSE_CONN_ID)
-        logging.info("Running mart SQL with params %s" % sql_params)
-        execute_sql(client, sql, sql_params)
+        excluded_raw = Variable.get("excluded_company_ids", default_var="[]")
+        try:
+            excluded_company_ids = [int(cid) for cid in json.loads(excluded_raw)]
+        except (json.JSONDecodeError, TypeError, ValueError):
+            excluded_company_ids = []
+        if not excluded_company_ids:
+            excluded_company_ids = [-1]
+        params = dict(sql_params)
+        params["excluded_company_ids"] = tuple(excluded_company_ids)
+        logging.info("Running mart SQL with params %s" % params)
+        execute_sql(client, sql, params)
 
     @task
     def fetch_dead_stock_days() -> int:
@@ -263,12 +272,21 @@ with DAG(
         client = get_clickhouse_client(CLICKHOUSE_CONN_ID)
         company_rows = client.execute("SELECT id, name FROM raw_res_company")
         company_names = {row[0]: row[1] for row in company_rows}
-        product_rows = client.execute(
-            "SELECT company_id, id, default_code FROM raw_product_product"
-        )
+        product_rows = client.execute("SELECT company_id, id, default_code FROM raw_product_product")
         product_codes = {(row[0], row[1]): row[2] for row in product_rows}
+        product_codes_any = {}
+        for company_id, product_id, default_code in product_rows:
+            if product_id not in product_codes_any and default_code:
+                product_codes_any[product_id] = default_code
 
         scope = Variable.get(VAR_FORECAST_SCOPE, default_var="only_class_a")
+        excluded_raw = Variable.get("excluded_company_ids", default_var="[]")
+        try:
+            excluded_company_ids = [int(cid) for cid in json.loads(excluded_raw)]
+        except (json.JSONDecodeError, TypeError, ValueError):
+            excluded_company_ids = []
+        if not excluded_company_ids:
+            excluded_company_ids = [-1]
         query = """
         SELECT
             m.company_id,
@@ -278,10 +296,11 @@ with DAG(
         FROM raw_stock_move m
         WHERE m.state = 'done'
           AND m.date_done >= now() - INTERVAL 12 MONTH
+          AND m.company_id NOT IN %(excluded_company_ids)s
         GROUP BY company_id, product_id, month
         ORDER BY company_id, product_id, month
         """
-        rows = client.execute(query)
+        rows = client.execute(query, {"excluded_company_ids": tuple(excluded_company_ids)})
 
         # Optional filter to class A to limit compute.
         class_a_set = set()
@@ -291,8 +310,11 @@ with DAG(
                 """
                 SELECT company_id, product_id
                 FROM mart_abc_classification
-                WHERE snapshot_date = toDate(now()) AND abc_class = 'A'
-                """
+                WHERE snapshot_date = toDate(now())
+                  AND abc_class = 'A'
+                  AND company_id NOT IN %(excluded_company_ids)s
+                """,
+                {"excluded_company_ids": tuple(excluded_company_ids)},
             )
             class_a_set = {(r[0], r[1]) for r in class_a_rows}
         if scope.startswith("top_n:"):
@@ -306,10 +328,11 @@ with DAG(
                     SELECT company_id, product_id
                     FROM mart_abc_classification
                     WHERE snapshot_date = toDate(now())
+                      AND company_id NOT IN %(excluded_company_ids)s
                     ORDER BY total_value_moved DESC
                     LIMIT %(limit)s
                     """,
-                    {"limit": n},
+                    {"limit": n, "excluded_company_ids": tuple(excluded_company_ids)},
                 )
                 top_n_set = {(r[0], r[1]) for r in top_n_rows}
 
@@ -343,6 +366,8 @@ with DAG(
             product_default_code = product_codes.get((company_id, product_id), "")
             if not product_default_code:
                 product_default_code = product_codes.get((0, product_id), "")
+            if not product_default_code:
+                product_default_code = product_codes_any.get(product_id, "")
             forecast_rows.append(
                 {
                     "forecast_month": forecast_month,

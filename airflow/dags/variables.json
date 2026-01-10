@@ -4,7 +4,7 @@
   "abc_c_pct": "0.05",
   "anomaly_pct": "0.2",
   "dead_stock_days": "30",
-  "excluded_company_ids": "[1, 2]",
+  "excluded_company_ids": "[1]",
   "forecast_top_n_or_only_class_a": "only_class_a",
   "full_refresh_models": "[\"product.template\", \"product.product\"]",
   "odoo_helpdesk_team_id": "1",

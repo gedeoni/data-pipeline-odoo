@@ -166,6 +166,11 @@ If you prefer the Basic fields instead of URI:
 - Add marts in ClickHouse SQL after raw extraction.
 - Prefer small, composable marts over monolithic queries.
 
+## Sample dashboard
+After you connect Superset to ClickHouse and add the marts, you can build a dashboard like the one below to track inventory health, movement velocity, and aging across warehouses.
+
+![Sample Superset dashboard](image.png)
+
 ## License
 
 MIT. See `LICENSE`.
