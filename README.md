@@ -183,4 +183,4 @@ After you connect Superset to ClickHouse and add the marts, you can build a dash
 
 ## License
 
-MIT. See `LICENSE`.
+Apache 2.0. See `LICENSE`.
